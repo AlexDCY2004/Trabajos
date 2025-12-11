@@ -11,6 +11,7 @@ import estudianteRoutes from './src/routes/estudianteRoute.js';
 import notaRoute from './src/routes/notaRoute.js';
 import asignaturaRoute from './src/routes/asignaturaRoute.js';
 import docenteRoute from './src/routes/docenteRoutes.js';
+import cursoRoute from './src/routes/cursoRoute.js';
 
 //inicializar la app
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/estudiantes', estudianteRoutes);
 app.use('/api/notas', notaRoute);
 app.use('/api/asignaturas', asignaturaRoute);
 app.use('/api/docentes', docenteRoute);
+app.use('/api/cursos', cursoRoute);
 
 
 //conexion a la base de datos

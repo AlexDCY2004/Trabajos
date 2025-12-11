@@ -1,12 +1,36 @@
 import { Docente } from "../models/docente.js";
+import { Asignatura } from "../models/asignatura.js";
 
 export const crearDocente = async (req, res) => {
     try {
-        const { nombre, departamento } = req.body;
-        if (!nombre || !departamento) {
-            return res.status(400).json({ error: "Faltan datos requeridos: nombre o departamento" });
+        const { 
+            nombre, 
+            cedula, 
+            email, 
+            telefono, 
+            direccion, 
+            fechaContratacion, 
+            especialidad, 
+            horasLaborales, 
+            departamento 
+        } = req.body;
+        
+        if (!nombre || !cedula || !departamento) {
+            return res.status(400).json({ error: "Faltan datos requeridos: nombre, cedula y departamento son obligatorios" });
         }
-        const nuevo = await Docente.create({ nombre, departamento });
+        
+        const nuevo = await Docente.create({ 
+            nombre, 
+            cedula, 
+            email, 
+            telefono, 
+            direccion, 
+            fechaContratacion, 
+            especialidad, 
+            horasLaborales, 
+            departamento 
+        });
+        
         return res.status(201).json(nuevo);
     } catch (err) {
         return res.status(500).json({ error: err.message });
@@ -39,9 +63,27 @@ export const ActualizarDocente = async (req, res) => {
         const docente = await Docente.findByPk(id);
         if (!docente) return res.status(404).json({ error: "Docente no encontrado" });
 
-        const { nombre, departamento } = req.body;
+        const { 
+            nombre, 
+            cedula, 
+            email, 
+            telefono, 
+            direccion, 
+            fechaContratacion, 
+            especialidad, 
+            horasLaborales, 
+            departamento 
+        } = req.body;
+        
         await docente.update({ 
             nombre: nombre ?? docente.nombre,
+            cedula: cedula ?? docente.cedula,
+            email: email ?? docente.email,
+            telefono: telefono ?? docente.telefono,
+            direccion: direccion ?? docente.direccion,
+            fechaContratacion: fechaContratacion ?? docente.fechaContratacion,
+            especialidad: especialidad ?? docente.especialidad,
+            horasLaborales: horasLaborales ?? docente.horasLaborales,
             departamento: departamento ?? docente.departamento
         });
 
@@ -110,25 +152,3 @@ export const listarAsignaturasDeDocente = async (req, res) => {
     }
 };
 
-// Nuevo: asignar varias asignaturas a un docente (body: { asignaturaIds: [1,2,3] })
-export const asignarAsignaturasMasivas = async (req, res) => {
-    try {
-        const { id: docenteId } = req.params;
-        const { asignaturaIds } = req.body;
-        if (!Array.isArray(asignaturaIds) || asignaturaIds.length === 0) {
-            return res.status(400).json({ error: "Se requiere un arreglo asignaturaIds" });
-        }
-        const docente = await Docente.findByPk(docenteId);
-        if (!docente) return res.status(404).json({ error: "Docente no encontrado" });
-
-        // update en bloque
-        await Asignatura.update(
-            { docenteId: docente.id },
-            { where: { id: asignaturaIds } }
-        );
-        const asignadas = await Asignatura.findAll({ where: { id: asignaturaIds } });
-        return res.json(asignadas);
-    } catch (err) {
-        return res.status(500).json({ error: err.message });
-    }
-};

@@ -6,9 +6,7 @@ import {
     ActualizarDocente, 
     eliminarDocente,
     asignarAsignatura,        
-    desasignarAsignatura,     
-    listarAsignaturasDeDocente,
-    asignarAsignaturasMasivas
+    desasignarAsignatura
 } from '../controllers/docenteController.js';
 
 const router = express.Router();
@@ -23,6 +21,5 @@ router.delete("/:id", eliminarDocente);
 // Rutas para asignaciones
 router.post("/:id/asignaturas/:asignaturaId", asignarAsignatura);
 router.delete("/:id/asignaturas/:asignaturaId", desasignarAsignatura);
-router.post("/:id/asignaturas", asignarAsignaturasMasivas);
 
 export default router;

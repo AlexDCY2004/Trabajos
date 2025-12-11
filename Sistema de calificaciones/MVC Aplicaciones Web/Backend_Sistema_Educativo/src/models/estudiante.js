@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
+import { Curso } from "./curso.js";
 
 export const Estudiante = sequelize.define(
     'Estudiante', //representa la tabla estudiantes
@@ -20,9 +21,9 @@ export const Estudiante = sequelize.define(
         telefono: {type: DataTypes.STRING(20), allowNull: true},
         direccion: {type: DataTypes.STRING(200), allowNull: true},
         fechaNacimiento: {type: DataTypes.DATE, allowNull: true},
-        curso: {type: DataTypes.STRING(100), allowNull: true},
         foto: {type: DataTypes.TEXT, allowNull: true},
         estado: {type: DataTypes.ENUM('activo', 'inactivo'), allowNull: false, defaultValue: 'activo'},
+        cursoId: { type: DataTypes.INTEGER, allowNull: true }, // FK hacia cursos
     },
     {
         tableName: 'estudiantes', timestamps: false //representa el nombre de la tabla en la base de datos
@@ -30,4 +31,9 @@ export const Estudiante = sequelize.define(
 
 
 );
+
+// Relación: un Estudiante pertenece a un Curso
+Estudiante.belongsTo(Curso, { foreignKey: 'cursoId' });
+// Registrar la relación complementaria: un Curso tiene muchos Estudiantes
+Curso.hasMany(Estudiante, { foreignKey: 'cursoId', onDelete: 'SET NULL' });
 

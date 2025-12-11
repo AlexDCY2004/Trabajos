@@ -1,15 +1,24 @@
 import { Estudiante } from "../models/estudiante.js";
+import { Curso } from "../models/curso.js";
 import { Op } from "sequelize";
 
 //crear estudiante
 export const crearEstudiante = async (req, res) => {
     try{
-        const {nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso} = req.body;
+        const {nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado,cursoId} = req.body;
         if(!nombre || !cedula){
             return res.status(400).json({mensaje: "Faltan datos requeridos"});
         }
 
-        const nuevo = await Estudiante.create({nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso});
+        //validar que exista el cursoId si se proporciona
+        if(cursoId){
+            const cursoExistente = await Curso.findByPk(cursoId);
+            if(!cursoExistente){
+                return res.status(400).json({mensaje: "Curso no encontrado"});
+            }
+        }
+
+        const nuevo = await Estudiante.create({nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, cursoId});
         res.status(201).json(nuevo);
     
     }catch (err){
@@ -19,28 +28,34 @@ export const crearEstudiante = async (req, res) => {
 
 //crear obtener todos los estudiante
 
+// En listarEstudiantes
 export const listarEstudiantes = async (req, res) => {
     try{
-        const estudiantes = await Estudiante.findAll();
+        const estudiantes = await Estudiante.findAll({
+            where: { estado: 'activo' },
+            include: [{
+                model: Curso,
+                attributes: ['id', 'nombre', 'nivel', 'paralelo']
+            }]
+        });
         res.json(estudiantes);
-
     } catch (error){
         res.status(500).json({mensaje: "Error al listar los estudiantes", error: error.message});
     }
 };
 
-
-//obtener por ID
-
+// En buscarEstudianteId
 export const buscarEstudianteId = async (req, res) => {
     try{
-        const estudiante = await Estudiante.findByPk(req.params.id);
+        const estudiante = await Estudiante.findByPk(req.params.id, {
+            include: [{
+                model: Curso
+            }]
+        });
         if(!estudiante){
             return res.status(404).json({mensaje: "Estudiante no encontrado"});
         }
-
         res.json(estudiante);
-
     } catch (error){
         res.status(500).json({mensaje: "Error al buscar el estudiante", error: error.message});
     }
@@ -119,12 +134,12 @@ export const actualizarEstudiante = async (req, res) => {
         if(!estudiante)
             return res.status(404).json({mensaje: "Estudiante no encontrado para actualizar"});
 
-        const { nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso } = req.body;
-        if (!nombre && !cedula && !email && !telefono && !direccion && !fechaNacimiento && !foto && !estado && !curso) {
+        const { nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado,cursoId } = req.body;
+        if (!nombre && !cedula && !email && !telefono && !direccion && !fechaNacimiento && !foto && !estado && !cursoId) {
             return res.status(400).json({ message: "No hay campos válidos para actualizar" });
         }
 
-        await estudiante.update({ nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso });
+        await estudiante.update({ nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, cursoId });
 
         res.json(estudiante);
 
