@@ -1,4 +1,5 @@
 import { Estudiante } from "../models/estudiante.js";
+import { Op } from "sequelize";
 
 //crear estudiante
 export const crearEstudiante = async (req, res) => {
@@ -42,6 +43,71 @@ export const buscarEstudianteId = async (req, res) => {
 
     } catch (error){
         res.status(500).json({mensaje: "Error al buscar el estudiante", error: error.message});
+    }
+};
+
+export const buscarEstudiante = async (req, res) => {
+    try{
+        const { busqueda } = req.query;
+        
+        if(!busqueda){
+            return res.status(400).json({mensaje: "Debe proporcionar un término de búsqueda"});
+        }
+
+        const estudiantes = await Estudiante.findAll({
+            where: {
+                [Op.or]: [
+                    { cedula: { [Op.like]: `%${busqueda}%` } },
+                    { nombre: { [Op.like]: `%${busqueda}%` } },
+                    { id: isNaN(busqueda) ? null : busqueda }
+                ],
+                estado: 'activo'
+            }
+        });
+
+        if(estudiantes.length === 0){
+            return res.status(404).json({mensaje: "No se encontraron estudiantes con ese criterio"});
+        }
+
+        res.json(estudiantes);
+
+    } catch (error){
+        res.status(500).json({mensaje: "Error al buscar estudiantes", error: error.message});
+    }
+};
+
+//buscar por cédula específica
+export const buscarEstudiantePorCedula = async (req, res) => {
+    try{
+        const estudiante = await Estudiante.findOne({ where: { cedula: req.params.cedula } });
+        if(!estudiante){
+            return res.status(404).json({mensaje: "Estudiante no encontrado"});
+        }
+
+        res.json(estudiante);
+
+    } catch (error){
+        res.status(500).json({mensaje: "Error al buscar el estudiante", error: error.message});
+    }
+};
+
+//buscar por nombre
+export const buscarEstudiantePorNombre = async (req, res) => {
+    try{
+        const estudiantes = await Estudiante.findAll({ 
+            where: { 
+                nombre: { [Op.like]: `%${req.params.nombre}%` }
+            } 
+        });
+        
+        if(estudiantes.length === 0){
+            return res.status(404).json({mensaje: "No se encontraron estudiantes con ese nombre"});
+        }
+
+        res.json(estudiantes);
+
+    } catch (error){
+        res.status(500).json({mensaje: "Error al buscar estudiantes", error: error.message});
     }
 };
 

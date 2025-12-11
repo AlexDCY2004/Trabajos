@@ -1,6 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
-import { Nota } from "./nota.js";
+import { Docente } from "./docente.js";
 
 export const Asignatura = sequelize.define(
     'Asignatura', //representa la tabla asignaturas
@@ -16,5 +16,5 @@ export const Asignatura = sequelize.define(
     }
 );
 
-Asignatura.hasMany(Nota, { foreignKey: "asignaturaId", onDelete: "CASCADE" });
-Nota.belongsTo(Asignatura, { foreignKey: "asignaturaId", onDelete: "CASCADE" });
+// Asociación local para evitar imports circulares
+Asignatura.belongsTo(Docente, { foreignKey: 'docenteId', onDelete: 'SET NULL' });

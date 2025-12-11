@@ -4,7 +4,10 @@ import {
     listarEstudiantes, 
     buscarEstudianteId, 
     actualizarEstudiante, 
-    eliminarEstudiante 
+    eliminarEstudiante,
+    buscarEstudiante,
+    buscarEstudiantePorCedula,
+    buscarEstudiantePorNombre
 } from '../controllers/estudianteController.js';
 
 const router = Router();
@@ -12,6 +15,9 @@ const router = Router();
 //Rutas para estudiantes
 router.post('/', crearEstudiante);
 router.get('/', listarEstudiantes);
+router.get('/buscar', buscarEstudiante);
+router.get('/cedula/:cedula', buscarEstudiantePorCedula);
+router.get('/nombre/:nombre', buscarEstudiantePorNombre);
 router.get('/:id', buscarEstudianteId);
 router.put('/:id', actualizarEstudiante);
 router.delete('/:id', eliminarEstudiante);

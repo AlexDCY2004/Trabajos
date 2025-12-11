@@ -1,6 +1,5 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
-import { Asignatura } from "./asignatura.js";
 
 export const Docente = sequelize.define(
     "Docente",
@@ -13,7 +12,3 @@ export const Docente = sequelize.define(
         tableName: "docentes", timestamps: false
     }
 );
-
-// Relaciones
-Docente.hasMany(Asignatura, { foreignKey: "docenteId", onDelete: "SET NULL" });
-Asignatura.belongsTo(Docente, { foreignKey: "docenteId", onDelete: "SET NULL" });
