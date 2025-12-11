@@ -3,12 +3,12 @@ import { Estudiante } from "../models/estudiante.js";
 //crear estudiante
 export const crearEstudiante = async (req, res) => {
     try{
-        const {nombre, carrera} = req.body;
-        if(!nombre || !carrera){
+        const {nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso} = req.body;
+        if(!nombre || !cedula){
             return res.status(400).json({mensaje: "Faltan datos requeridos"});
         }
 
-        const nuevo = await Estudiante.create({nombre, carrera});
+        const nuevo = await Estudiante.create({nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso});
         res.status(201).json(nuevo);
     
     }catch (err){
@@ -24,7 +24,7 @@ export const listarEstudiantes = async (req, res) => {
         res.json(estudiantes);
 
     } catch (error){
-        res.status(500).json({mensaje: "Error al listar los estudiantes", error: error.mensaje});
+        res.status(500).json({mensaje: "Error al listar los estudiantes", error: error.message});
     }
 };
 
@@ -41,7 +41,7 @@ export const buscarEstudianteId = async (req, res) => {
         res.json(estudiante);
 
     } catch (error){
-        res.status(500).json({mensaje: "Error al buscar el estudiante", error: error.mensaje});
+        res.status(500).json({mensaje: "Error al buscar el estudiante", error: error.message});
     }
 };
 
@@ -53,19 +53,17 @@ export const actualizarEstudiante = async (req, res) => {
         if(!estudiante)
             return res.status(404).json({mensaje: "Estudiante no encontrado para actualizar"});
 
-        // Usar los campos del modelo: nombre y carrera
-        const { nombre, carrera } = req.body;
-        // Validar que al menos uno de los campos venga en el body
-        if (!nombre && !carrera) {
-            return res.status(400).json({ mensaje: "No hay campos válidos para actualizar" });
+        const { nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso } = req.body;
+        if (!nombre && !cedula && !email && !telefono && !direccion && !fechaNacimiento && !foto && !estado && !curso) {
+            return res.status(400).json({ message: "No hay campos válidos para actualizar" });
         }
 
-        await estudiante.update({ nombre, carrera });
+        await estudiante.update({ nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado, curso });
 
         res.json(estudiante);
 
     } catch (error){
-        res.status(500).json({mensaje: "Error al actualizar el estudiante", error: error.mensaje});
+        res.status(500).json({mensaje: "Error al actualizar el estudiante", error: error.message});
     }
 };
 
@@ -81,7 +79,7 @@ export const eliminarEstudiante = async (req, res) => {
         res.json({mensaje: "Estudiante eliminado correctamente"});
 
     } catch (error){
-        res.status(500).json({mensaje: "Error al eliminar el estudiante", error: error.mensaje});
+        res.status(500).json({mensaje: "Error al eliminar el estudiante", error: error.message});
     }
 };
 
