@@ -1,5 +1,6 @@
 import { Curso } from "../models/curso.js";
 import { Estudiante } from "../models/estudiante.js";
+import { Docente } from "../models/docente.js";
 import { Op } from "sequelize";
 
 // ============================================
@@ -18,12 +19,19 @@ export const listarCursos = async (req, res) => {
         const cursos = await Curso.findAll({
             where: filtros,
             order: [['nivel', 'ASC'], ['paralelo', 'ASC']],
-            include: [{
-                model: Estudiante,
-                attributes: ['id', 'nombre', 'cedula'],
-                where: { estado: 'activo' },
-                required: false // LEFT JOIN para mostrar cursos sin estudiantes
-            }]
+            include: [
+                {
+                    model: Estudiante,
+                    attributes: ['id', 'nombre', 'cedula'],
+                    where: { estado: 'activo' },
+                    required: false // LEFT JOIN para mostrar cursos sin estudiantes
+                },
+                {
+                    model: Docente,
+                    attributes: ['id', 'nombre', 'cedula', 'email', 'especialidad'],
+                    required: false
+                }
+            ]
         });
         
         // Agregar contador de estudiantes
@@ -48,12 +56,19 @@ export const obtenerCursoPorId = async (req, res) => {
         const { id } = req.params;
         
         const curso = await Curso.findByPk(id, {
-            include: [{
-                model: Estudiante,
-                attributes: ['id', 'nombre', 'cedula', 'email', 'telefono'],
-                where: { estado: 'activo' },
-                required: false
-            }]
+            include: [
+                {
+                    model: Estudiante,
+                    attributes: ['id', 'nombre', 'cedula', 'email', 'telefono'],
+                    where: { estado: 'activo' },
+                    required: false
+                },
+                {
+                    model: Docente,
+                    attributes: ['id', 'nombre', 'cedula', 'email', 'especialidad'],
+                    required: false
+                }
+            ]
         });
         
         if (!curso) {
@@ -93,12 +108,19 @@ export const buscarCurso = async (req, res) => {
                 ],
                 estado: 'activo'
             },
-            include: [{
-                model: Estudiante,
-                attributes: ['id'],
-                where: { estado: 'activo' },
-                required: false
-            }]
+            include: [
+                {
+                    model: Estudiante,
+                    attributes: ['id'],
+                    where: { estado: 'activo' },
+                    required: false
+                },
+                {
+                    model: Docente,
+                    attributes: ['id', 'nombre', 'cedula', 'email', 'especialidad'],
+                    required: false
+                }
+            ]
         });
         
         if (cursos.length === 0) {
@@ -122,7 +144,7 @@ export const buscarCurso = async (req, res) => {
 // ============================================
 export const crearCurso = async (req, res) => {
     try {
-        const { nombre, nivel, paralelo, anio, capacidad, descripcion, estado } = req.body;
+        const { nombre, nivel, paralelo, anio, capacidad, descripcion, estado, docenteId } = req.body;
         
         if (!nombre) {
             return res.status(400).json({ error: "El nombre del curso es obligatorio" });
@@ -134,6 +156,14 @@ export const crearCurso = async (req, res) => {
             return res.status(400).json({ error: "Ya existe un curso con ese nombre" });
         }
         
+        // Verificar que el docente existe (si se proporciona)
+        if (docenteId) {
+            const docente = await Docente.findByPk(docenteId);
+            if (!docente) {
+                return res.status(404).json({ error: "Docente no encontrado" });
+            }
+        }
+        
         const nuevoCurso = await Curso.create({
             nombre,
             nivel,
@@ -141,10 +171,20 @@ export const crearCurso = async (req, res) => {
             anio,
             capacidad,
             descripcion,
+            docenteId,
             estado: estado || 'activo'
         });
         
-        res.status(201).json(nuevoCurso);
+        // Obtener el curso con la información del docente
+        const cursoConDocente = await Curso.findByPk(nuevoCurso.id, {
+            include: {
+                model: Docente,
+                attributes: ['id', 'nombre', 'cedula', 'email', 'especialidad'],
+                required: false
+            }
+        });
+        
+        res.status(201).json(cursoConDocente);
     } catch (error) {
         console.error("Error al crear curso:", error);
         res.status(500).json({ error: "Error al crear el curso: " + error.message });
@@ -163,7 +203,7 @@ export const actualizarCurso = async (req, res) => {
             return res.status(404).json({ error: "Curso no encontrado" });
         }
         
-        const { nombre, nivel, paralelo, anio, capacidad, descripcion, estado } = req.body;
+        const { nombre, nivel, paralelo, anio, capacidad, descripcion, estado, docenteId } = req.body;
         
         // Verificar si el nuevo nombre ya existe en otro curso
         if (nombre && nombre !== curso.nombre) {
@@ -179,6 +219,14 @@ export const actualizarCurso = async (req, res) => {
             }
         }
         
+        // Verificar que el docente existe (si se proporciona)
+        if (docenteId && docenteId !== curso.docenteId) {
+            const docente = await Docente.findByPk(docenteId);
+            if (!docente) {
+                return res.status(404).json({ error: "Docente no encontrado" });
+            }
+        }
+        
         await curso.update({
             nombre: nombre || curso.nombre,
             nivel: nivel !== undefined ? nivel : curso.nivel,
@@ -186,10 +234,20 @@ export const actualizarCurso = async (req, res) => {
             anio: anio !== undefined ? anio : curso.anio,
             capacidad: capacidad !== undefined ? capacidad : curso.capacidad,
             descripcion: descripcion !== undefined ? descripcion : curso.descripcion,
+            docenteId: docenteId !== undefined ? docenteId : curso.docenteId,
             estado: estado !== undefined ? estado : curso.estado
         });
         
-        res.json(curso);
+        // Obtener el curso actualizado con la información del docente
+        const cursoActualizado = await Curso.findByPk(id, {
+            include: {
+                model: Docente,
+                attributes: ['id', 'nombre', 'cedula', 'email', 'especialidad'],
+                required: false
+            }
+        });
+        
+        res.json(cursoActualizado);
     } catch (error) {
         console.error("Error al actualizar curso:", error);
         res.status(500).json({ error: "Error al actualizar el curso: " + error.message });
@@ -244,11 +302,18 @@ export const obtenerEstudiantesCurso = async (req, res) => {
         const { id } = req.params;
         
         const curso = await Curso.findByPk(id, {
-            include: [{
-                model: Estudiante,
-                where: { estado: 'activo' },
-                required: false
-            }]
+            include: [
+                {
+                    model: Estudiante,
+                    where: { estado: 'activo' },
+                    required: false
+                },
+                {
+                    model: Docente,
+                    attributes: ['id', 'nombre', 'cedula', 'email', 'especialidad'],
+                    required: false
+                }
+            ]
         });
         
         if (!curso) {
@@ -261,7 +326,8 @@ export const obtenerEstudiantesCurso = async (req, res) => {
                 nombre: curso.nombre,
                 nivel: curso.nivel,
                 paralelo: curso.paralelo,
-                capacidad: curso.capacidad
+                capacidad: curso.capacidad,
+                docente: curso.Docente
             },
             totalEstudiantes: curso.Estudiantes?.length || 0,
             estudiantes: curso.Estudiantes || []

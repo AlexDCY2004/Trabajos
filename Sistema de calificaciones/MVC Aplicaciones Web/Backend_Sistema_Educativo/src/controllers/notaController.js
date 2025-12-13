@@ -1,5 +1,3 @@
-
-
 import { Nota } from "../models/nota.js";
 import { Estudiante } from "../models/estudiante.js";
 import { Asignatura } from "../models/asignatura.js";
@@ -50,7 +48,7 @@ export const listarNotas = async (req, res) => {
         const notas = await Nota.findAll({
             where: filtros,
             include: [
-                { model: Estudiante, attributes: ['id', 'nombre', 'cedula', 'curso'] },
+                { model: Estudiante, attributes: ['id', 'nombre', 'cedula', 'cursoId'] },
                 { model: Asignatura, attributes: ['id', 'nombre'] }
                 // { model: Docente, attributes: ['id', 'nombre'] } // Descomentar si tienes modelo Docente
             ],
@@ -323,7 +321,7 @@ export const obtenerNotasEstudiante = async (req, res) => {
                 id: estudiante.id,
                 nombre: estudiante.nombre,
                 cedula: estudiante.cedula,
-                curso: estudiante.curso
+                cursoId: estudiante.cursoId
             },
             asignaturas: Object.values(notasPorAsignatura)
         });

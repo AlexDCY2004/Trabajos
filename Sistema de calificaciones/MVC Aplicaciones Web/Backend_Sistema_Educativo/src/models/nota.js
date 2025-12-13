@@ -1,4 +1,3 @@
-
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
 import { Estudiante } from "./estudiante.js";
@@ -158,13 +157,21 @@ Nota.belongsTo(Estudiante, {
     foreignKey: "estudianteId" 
 });
 
-// Asociaciones requeridas por los includes del controlador
-Asignatura.hasMany(Nota, { foreignKey: "asignaturaId", onDelete: "CASCADE" });
-Nota.belongsTo(Asignatura, { foreignKey: "asignaturaId" });
+Asignatura.hasMany(Nota, { 
+    foreignKey: "asignaturaId", 
+    onDelete: "CASCADE" 
+});
+Nota.belongsTo(Asignatura, { 
+    foreignKey: "asignaturaId" 
+});
 
-// Opcional: asociaciones con Docente si se usa en filtros o includes
-Docente.hasMany(Nota, { foreignKey: "docenteId", onDelete: "SET NULL" });
-Nota.belongsTo(Docente, { foreignKey: "docenteId" });
+Docente.hasMany(Nota, { 
+    foreignKey: "docenteId", 
+    onDelete: "SET NULL" 
+});
+Nota.belongsTo(Docente, { 
+    foreignKey: "docenteId" 
+});
 
 
 
