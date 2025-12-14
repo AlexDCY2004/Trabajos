@@ -52,12 +52,10 @@ export const actualizarDocente = async (id, datos) => {
   }
 };
 
-// Eliminar docente (eliminación lógica)
+// Eliminar docente (DELETE físico en backend)
 export const eliminarDocente = async (id) => {
   try {
-    const response = await apiClient.put(`/api/docentes/${id}`, {
-      estado: 'inactivo'
-    });
+    const response = await apiClient.delete(`/api/docentes/${id}`);
     return response.data;
   } catch (error) {
     throw error;

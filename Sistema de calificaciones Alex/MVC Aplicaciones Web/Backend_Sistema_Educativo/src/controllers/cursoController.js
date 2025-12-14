@@ -23,6 +23,7 @@ export const listarCursos = async (req, res) => {
                 {
                     model: Estudiante,
                     attributes: ['id', 'nombre', 'cedula'],
+                    // No filtramos el curso por estudiantes activos; solo el listado de estudiantes
                     where: { estado: 'activo' },
                     required: false // LEFT JOIN para mostrar cursos sin estudiantes
                 },
@@ -89,25 +90,41 @@ export const obtenerCursoPorId = async (req, res) => {
 };
 
 // ============================================
-// BUSCAR CURSO POR NOMBRE O NIVEL
+// BUSCAR CURSO POR NOMBRE, PARALELO O CÓDIGO
 // ============================================
 export const buscarCurso = async (req, res) => {
     try {
         const { busqueda } = req.query;
         
-        if (!busqueda) {
+        if (!busqueda || String(busqueda).trim() === '') {
             return res.status(400).json({ error: "Debe proporcionar un término de búsqueda" });
+        }
+
+        const termino = String(busqueda).trim();
+        const esNumericoCorto = !isNaN(termino) && termino.length <= 3; // ID exacto solo si tiene hasta 3 dígitos
+
+        let where;
+        if (esNumericoCorto) {
+            // Si es un número muy corto (como 1, 2, 3), buscar por ID exacto
+            where = { 
+                id: Number(termino),
+                estado: 'activo'
+            };
+        } else {
+            // Búsqueda en nombre, paralelo, código y descripción
+            where = {
+                [Op.or]: [
+                    { nombre: { [Op.like]: `%${termino}%` } },
+                    { paralelo: { [Op.like]: `%${termino}%` } },
+                    { descripcion: { [Op.like]: `%${termino}%` } }
+                ],
+                estado: 'activo'
+            };
         }
         
         const cursos = await Curso.findAll({
-            where: {
-                [Op.or]: [
-                    { nombre: { [Op.like]: `%${busqueda}%` } },
-                    { nivel: { [Op.like]: `%${busqueda}%` } },
-                    { paralelo: { [Op.like]: `%${busqueda}%` } }
-                ],
-                estado: 'activo'
-            },
+            where,
+            order: [['nivel', 'ASC'], ['paralelo', 'ASC']],
             include: [
                 {
                     model: Estudiante,
@@ -123,13 +140,10 @@ export const buscarCurso = async (req, res) => {
             ]
         });
         
-        if (cursos.length === 0) {
-            return res.status(404).json({ mensaje: "No se encontraron cursos con ese criterio" });
-        }
-        
         const cursosConInfo = cursos.map(curso => ({
             ...curso.toJSON(),
-            totalEstudiantes: curso.Estudiantes?.length || 0
+            totalEstudiantes: curso.Estudiantes?.length || 0,
+            disponibilidad: (curso.capacidad || 30) - (curso.Estudiantes?.length || 0)
         }));
         
         res.json(cursosConInfo);

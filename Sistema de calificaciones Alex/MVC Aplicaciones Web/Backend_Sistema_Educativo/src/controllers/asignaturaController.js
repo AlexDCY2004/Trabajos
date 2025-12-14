@@ -1,6 +1,7 @@
 import { Asignatura } from "../models/asignatura.js";
 import { Docente } from "../models/docente.js";
 import { Nota } from "../models/nota.js";
+import { Op } from "sequelize";
 
 //crear asignatura
 export const crearAsignatura = async (req, res) => {
@@ -113,6 +114,45 @@ export const eliminarAsignatura = async (req, res) => {
 
     } catch (error){
         res.status(500).json({mensaje: "Error al eliminar la asignatura", error: error.mensaje});
+    }
+};
+
+// Buscar asignatura por nombre o código
+export const buscarAsignatura = async (req, res) => {
+    try {
+        const { busqueda } = req.query;
+        
+        if (!busqueda || String(busqueda).trim() === '') {
+            return res.status(400).json({ error: "Debe proporcionar un término de búsqueda" });
+        }
+
+        const termino = String(busqueda).trim();
+        const esNumericoCorto = !isNaN(termino) && termino.length <= 3; // ID exacto solo si tiene hasta 3 dígitos
+
+        let where;
+        if (esNumericoCorto) {
+            // Si es un número muy corto (como 1, 2, 3), buscar por ID exacto
+            where = { id: Number(termino) };
+        } else {
+            // Búsqueda por texto en nombre o código
+            where = {
+                [Op.or]: [
+                    { nombre: { [Op.like]: `%${termino}%` } },
+                    { codigo: { [Op.like]: `%${termino}%` } }
+                ]
+            };
+        }
+        
+        const asignaturas = await Asignatura.findAll({
+            where,
+            order: [['nombre', 'ASC']],
+            include: [{ model: Docente }]
+        });
+        
+        res.json(asignaturas);
+    } catch (error) {
+        console.error("Error al buscar asignatura:", error);
+        res.status(500).json({ error: "Error al buscar asignatura" });
     }
 };
 

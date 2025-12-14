@@ -1,18 +1,45 @@
 import { Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
 import { logout, obtenerUsuarioActual } from '../../services/authService';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import EstudiantePage from '../EstudiantePage';
 import DocentePage from '../DocentePage';
 import NotaPage from '../NotaPage';
 import AsignaturaPage from '../AsignaturaPage';
 import CursoPage from '../CursoPage';
+import { obtenerResumenDashboard } from '../../services/dashboardService';
 
 // Subpáginas del Dashboard
 function InicioPage() {
   const usuario = obtenerUsuarioActual();
   const rolActual = usuario?.rol || 'admin';
   const base = `/${rolActual}`;
+
+  const [resumen, setResumen] = useState({
+    estudiantesActivos: 0,
+    docentes: 0,
+    asignaturas: 0,
+    cursosActivos: 0,
+    notasRegistradas: 0,
+  });
+  const [cargandoResumen, setCargandoResumen] = useState(true);
+  const [errorResumen, setErrorResumen] = useState('');
+
+  useEffect(() => {
+    let vivo = true;
+    const cargar = async () => {
+      try {
+        const data = await obtenerResumenDashboard();
+        if (vivo) setResumen(data);
+      } catch (err) {
+        if (vivo) setErrorResumen(err.message);
+      } finally {
+        if (vivo) setCargandoResumen(false);
+      }
+    };
+    cargar();
+    return () => { vivo = false; };
+  }, []);
 
   return (
     <div className="container mt-4">
@@ -21,6 +48,11 @@ function InicioPage() {
         Panel de Inicio
       </h2>
       <p className="text-muted">Bienvenido al Sistema de Gestión Académica</p>
+      {errorResumen && (
+        <div className="alert alert-warning" role="alert">
+          No se pudo cargar el resumen: {errorResumen}
+        </div>
+      )}
       
       <div className="row mt-4">
         <div className="col-md-4 mb-3">
@@ -31,7 +63,7 @@ function InicioPage() {
                   <i className="bi bi-people-fill me-2"></i>
                   Estudiantes Activos
                 </h5>
-                <p className="card-text display-4">150</p>
+                <p className="card-text display-4">{cargandoResumen ? '...' : resumen.estudiantesActivos}</p>
                 <small className="text-white-50">
                   <i className="bi bi-arrow-right-circle me-1"></i>
                   Click para gestionar
@@ -48,7 +80,7 @@ function InicioPage() {
                   <i className="bi bi-person-badge me-2"></i>
                   Docentes
                 </h5>
-                <p className="card-text display-4">25</p>
+                <p className="card-text display-4">{cargandoResumen ? '...' : resumen.docentes}</p>
                 <small className="text-white-50">
                   <i className="bi bi-arrow-right-circle me-1"></i>
                   Click para gestionar
@@ -65,7 +97,7 @@ function InicioPage() {
                   <i className="bi bi-book me-2"></i>
                   Notas y Evaluaciones
                 </h5>
-                <p className="card-text display-4">450</p>
+                <p className="card-text display-4">{cargandoResumen ? '...' : resumen.notasRegistradas}</p>
                 <small className="text-white-50">
                   <i className="bi bi-arrow-right-circle me-1"></i>
                   Click para gestionar
@@ -85,7 +117,7 @@ function InicioPage() {
                   <i className="bi bi-book-fill me-2"></i>
                   Asignaturas
                 </h5>
-                <p className="card-text display-4">28</p>
+                <p className="card-text display-4">{cargandoResumen ? '...' : resumen.asignaturas}</p>
                 <small className="text-white-50">
                   <i className="bi bi-arrow-right-circle me-1"></i>
                   Click para gestionar
@@ -102,7 +134,7 @@ function InicioPage() {
                   <i className="bi bi-building me-2"></i>
                   Cursos
                 </h5>
-                <p className="card-text display-4">18</p>
+                <p className="card-text display-4">{cargandoResumen ? '...' : resumen.cursosActivos}</p>
                 <small className="text-white-50">
                   <i className="bi bi-arrow-right-circle me-1"></i>
                   Click para gestionar

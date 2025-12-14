@@ -10,6 +10,7 @@ export default function NotaPage() {
   const [notas, setNotas] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
   const [docentes, setDocentes] = useState([]);
+  const [asignaturas, setAsignaturas] = useState([]);
   const [cargando, setCargando] = useState(false);
   const [alert, setAlert] = useState({ show: false });
   const [showModal, setShowModal] = useState(false);
@@ -41,14 +42,16 @@ export default function NotaPage() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      const [notas, estudiantes, docentes] = await Promise.all([
+      const [notas, estudiantes, docentes, asignaturasData] = await Promise.all([
         listarNotas(),
         listarEstudiantes(),
-        listarDocentes()
+        listarDocentes(),
+        listarAsignaturas()
       ]);
       setNotas(notas);
       setEstudiantes(estudiantes);
       setDocentes(docentes);
+      setAsignaturas(asignaturasData);
     } catch (error) {
       setAlert({ show: true, type: 'danger', message: error.message });
     } finally {
@@ -71,8 +74,8 @@ export default function NotaPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formulario.estudianteId || !formulario.asignaturaId) {
-      setAlert({ show: true, type: 'warning', message: 'Estudiante y asignatura son obligatorios' });
+    if (!formulario.estudianteId || !formulario.asignaturaId || !formulario.docenteId) {
+      setAlert({ show: true, type: 'warning', message: 'Estudiante, asignatura y docente son obligatorios' });
       return;
     }
 
@@ -196,6 +199,41 @@ export default function NotaPage() {
                     {estudiantes.map(est => (
                       <option key={est.id} value={est.id}>
                         {est.nombre} ({est.cedula})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Asignatura *</label>
+                  <select
+                    className="form-select"
+                    value={formulario.asignaturaId}
+                    onChange={(e) => setFormulario({ ...formulario, asignaturaId: e.target.value })}
+                    required
+                  >
+                    <option value="">Seleccionar asignatura</option>
+                    {asignaturas.map(asig => (
+                      <option key={asig.id} value={asig.id}>
+                        {asig.nombre} ({asig.codigo})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Docente *</label>
+                  <select
+                    className="form-select"
+                    value={formulario.docenteId}
+                    onChange={(e) => setFormulario({ ...formulario, docenteId: e.target.value })}
+                    required
+                  >
+                    <option value="">Seleccionar docente</option>
+                    {docentes.map(doc => (
+                      <option key={doc.id} value={doc.id}>
+                        {doc.nombre} ({doc.cedula})
                       </option>
                     ))}
                   </select>
@@ -376,6 +414,8 @@ export default function NotaPage() {
                 <tr>
                   <th>ID</th>
                   <th>Estudiante</th>
+                  <th>Asignatura</th>
+                  <th>Docente</th>
                   <th>Parcial</th>
                   <th>Tarea</th>
                   <th>Informe</th>
@@ -388,7 +428,7 @@ export default function NotaPage() {
               <tbody>
                 {notas.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="text-center text-muted py-4">
+                    <td colSpan="11" className="text-center text-muted py-4">
                       No hay notas registradas
                     </td>
                   </tr>
@@ -397,6 +437,8 @@ export default function NotaPage() {
                     <tr key={nota.id}>
                       <td>{nota.id}</td>
                       <td>{nota.Estudiante?.nombre || 'N/A'}</td>
+                      <td>{nota.Asignatura?.nombre || 'N/A'}</td>
+                      <td>{nota.Docente?.nombre || 'N/A'}</td>
                       <td>Parcial {nota.parcial}</td>
                       <td>{nota.tarea}</td>
                       <td>{nota.informe}</td>

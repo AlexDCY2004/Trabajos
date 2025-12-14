@@ -49,3 +49,15 @@ export const eliminarAsignatura = async (id) => {
     throw error;
   }
 };
+
+// Buscar asignatura
+export const buscarAsignatura = async (busqueda) => {
+  try {
+    const response = await apiClient.get('/api/asignaturas/buscar', {
+      params: { busqueda }
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

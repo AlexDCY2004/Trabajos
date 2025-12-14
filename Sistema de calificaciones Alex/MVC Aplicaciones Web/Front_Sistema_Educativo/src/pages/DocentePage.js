@@ -16,6 +16,9 @@ export default function DocentePage() {
     cedula: '',
     email: '',
     telefono: '',
+    direccion: '',
+    fechaContratacion: '',
+    horasLaborales: '',
     departamento: '',
     especialidad: ''
   });
@@ -72,7 +75,7 @@ export default function DocentePage() {
         setAlert({ show: true, type: 'success', message: 'Docente creado correctamente' });
       }
       
-      setFormulario({ nombre: '', cedula: '', email: '', telefono: '', departamento: '', especialidad: '' });
+      setFormulario({ nombre: '', cedula: '', email: '', telefono: '', direccion: '', fechaContratacion: '', horasLaborales: '', departamento: '', especialidad: '' });
       setEditando(null);
       setShowFormulario(false);
       cargarDocentes();
@@ -165,7 +168,7 @@ export default function DocentePage() {
                   />
                 </div>
               </div>
-              <div className="row">
+                <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Email</label>
                   <input
@@ -185,6 +188,36 @@ export default function DocentePage() {
                   />
                 </div>
               </div>
+                <div className="row">
+                  <div className="col-md-6 mb-3">
+                    <label className="form-label">Dirección</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={formulario.direccion}
+                      onChange={(e) => setFormulario({ ...formulario, direccion: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <label className="form-label">Fecha de Contratación</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={formulario.fechaContratacion}
+                      onChange={(e) => setFormulario({ ...formulario, fechaContratacion: e.target.value })}
+                    />
+                  </div>
+                  <div className="col-md-3 mb-3">
+                    <label className="form-label">Horas Laborales</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Ej: 40 horas/semana"
+                      value={formulario.horasLaborales}
+                      onChange={(e) => setFormulario({ ...formulario, horasLaborales: e.target.value })}
+                    />
+                  </div>
+                </div>
               <div className="row">
                 <div className="col-md-6 mb-3">
                   <label className="form-label">Departamento *</label>

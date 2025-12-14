@@ -1,5 +1,6 @@
 import { Docente } from "../models/docente.js";
 import { Asignatura } from "../models/asignatura.js";
+import { Op } from "sequelize";
 
 export const crearDocente = async (req, res) => {
     try {
@@ -18,10 +19,16 @@ export const crearDocente = async (req, res) => {
         if (!nombre || !cedula || !departamento) {
             return res.status(400).json({ error: "Faltan datos requeridos: nombre, cedula y departamento son obligatorios" });
         }
+
+        // Evitar duplicados de cédula con mensaje claro
+        const existente = await Docente.findOne({ where: { cedula: String(cedula).trim() } });
+        if (existente) {
+            return res.status(400).json({ error: "Ya existe un docente con esa cédula" });
+        }
         
         const nuevo = await Docente.create({ 
             nombre, 
-            cedula, 
+            cedula: String(cedula).trim(), 
             email, 
             telefono, 
             direccion, 
@@ -33,6 +40,11 @@ export const crearDocente = async (req, res) => {
         
         return res.status(201).json(nuevo);
     } catch (err) {
+        // Mejorar mensajes de validación Sequelize
+        if (err?.name === 'SequelizeValidationError' || err?.name === 'SequelizeUniqueConstraintError') {
+            const detalles = err.errors?.map(e => e.message).join('; ');
+            return res.status(400).json({ error: detalles || 'Error de validación' });
+        }
         return res.status(500).json({ error: err.message });
     }
 };
@@ -43,6 +55,53 @@ export const listarDocentes = async (req, res) => {
         return res.json(docentes);
     } catch (err) {
         return res.status(500).json({ error: "Error al listar docentes" });
+    }
+};
+
+export const buscarDocente = async (req, res) => {
+    try {
+        const { busqueda } = req.query;
+        if (!busqueda || String(busqueda).trim() === '') {
+            return res.status(400).json({ error: "Debe proporcionar un término de búsqueda" });
+        }
+
+        const termino = String(busqueda).trim();
+        const esNumerico = !isNaN(termino);
+        const pareceCedula = esNumerico && termino.length >= 7; // cédulas suelen ser de 7+ dígitos
+
+        let where;
+        if (esNumerico && !pareceCedula) {
+            // Búsqueda por ID estricta (números cortos)
+            where = { id: Number(termino) };
+        } else if (pareceCedula) {
+            // Búsqueda por cédula (exacta y parcial)
+            where = {
+                [Op.or]: [
+                    { cedula: termino },
+                    { cedula: { [Op.like]: `%${termino}%` } }
+                ]
+            };
+        } else {
+            // Búsqueda por texto en campos
+            where = {
+                [Op.or]: [
+                    { cedula: { [Op.like]: `%${termino}%` } },
+                    { nombre: { [Op.like]: `%${termino}%` } },
+                    { departamento: { [Op.like]: `%${termino}%` } },
+                    { especialidad: { [Op.like]: `%${termino}%` } }
+                ]
+            };
+        }
+
+        const resultados = await Docente.findAll({
+            where,
+            order: [["nombre", "ASC"]]
+        });
+
+        // Devuelve array vacío con 200 para evitar errores en el front
+        return res.json(resultados || []);
+    } catch (err) {
+        return res.status(500).json({ error: err.message });
     }
 };
 

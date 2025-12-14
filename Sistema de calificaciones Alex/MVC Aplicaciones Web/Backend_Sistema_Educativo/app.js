@@ -2,8 +2,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import { dbConnect, sequelize } from './src/config/database.js';
 //import estudianteRoutes from './routes/estudianteRoute.js';
@@ -13,12 +18,17 @@ import asignaturaRoute from './src/routes/asignaturaRoute.js';
 import docenteRoute from './src/routes/docenteRoutes.js';
 import cursoRoute from './src/routes/cursoRoute.js';
 import authRoute from './src/routes/authRoute.js';
+import dashboardRoute from './src/routes/dashboardRoute.js';
+import uploadRoute from './src/routes/uploadRoute.js';
 import { Usuario } from './src/models/usuario.js';
 
 //inicializar la app
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Servir archivos estáticos desde public/
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Log simple de peticiones (incluye body para ayudar a depurar PUT/POST)
 app.use((req, res, next) => {
@@ -39,6 +49,8 @@ app.use('/api/asignaturas', asignaturaRoute);
 app.use('/api/docentes', docenteRoute);
 app.use('/api/cursos', cursoRoute);
 app.use('/api/auth', authRoute);
+app.use('/api/dashboard', dashboardRoute);
+app.use('/api/upload', uploadRoute);
 
 
 dbConnect();

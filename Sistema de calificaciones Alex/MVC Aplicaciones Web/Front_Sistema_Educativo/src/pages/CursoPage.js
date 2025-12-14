@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listarCursos, crearCurso, actualizarCurso, eliminarCurso, obtenerEstudiantesCurso } from '../services/cursoService';
+import { listarCursos, crearCurso, actualizarCurso, eliminarCurso, obtenerEstudiantesCurso, buscarCurso } from '../services/cursoService';
 import { listarDocentes } from '../services/docenteService';
 import Alert from '../components/Alert';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -13,11 +13,14 @@ export default function CursoPage() {
   const [cursoAEliminar, setCursoAEliminar] = useState(null);
   const [showFormulario, setShowFormulario] = useState(false);
   const [showEstudiantes, setShowEstudiantes] = useState(null);
+  const [nombreCursoSeleccionado, setNombreCursoSeleccionado] = useState('');
   const [estudiantesCurso, setEstudiantesCurso] = useState([]);
+  const [busqueda, setBusqueda] = useState('');
   const [formulario, setFormulario] = useState({
     nombre: '',
     nivel: '',
     paralelo: '',
+    descripcion: '',
     capacidad: '',
     anio: new Date().getFullYear(),
     estado: 'activo',
@@ -51,10 +54,11 @@ export default function CursoPage() {
     }
   };
 
-  const handleVerEstudiantes = async (cursoId) => {
+  const handleVerEstudiantes = async (cursoId, nombreCurso) => {
     try {
       const data = await obtenerEstudiantesCurso(cursoId);
-      setEstudiantesCurso(data.Estudiantes || []);
+      setEstudiantesCurso(data.estudiantes || []);
+      setNombreCursoSeleccionado(nombreCurso);
       setShowEstudiantes(cursoId);
     } catch (error) {
       setAlert({ show: true, type: 'danger', message: 'Error al cargar estudiantes' });
@@ -82,6 +86,7 @@ export default function CursoPage() {
         nombre: '', 
         nivel: '', 
         paralelo: '', 
+        descripcion: '',
         capacidad: '', 
         anio: new Date().getFullYear(),
         estado: 'activo',
@@ -114,6 +119,24 @@ export default function CursoPage() {
       cargarCursos();
     } catch (error) {
       setAlert({ show: true, type: 'danger', message: error.message });
+    }
+  };
+
+  const handleBuscar = async (e) => {
+    e.preventDefault();
+    if (!busqueda.trim()) {
+      cargarCursos();
+      return;
+    }
+    
+    setCargando(true);
+    try {
+      const data = await buscarCurso(busqueda);
+      setCursos(data);
+    } catch (error) {
+      setCursos([]);
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -157,6 +180,23 @@ export default function CursoPage() {
         type={alert.type}
         onClose={() => setAlert({ show: false })}
       />
+
+      <div className="card mb-4">
+        <div className="card-body">
+          <form onSubmit={handleBuscar} className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar por nombre o paralelo..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+            <button className="btn btn-outline-secondary" type="submit">
+              <i className="bi bi-search"></i>
+            </button>
+          </form>
+        </div>
+      </div>
 
       {showFormulario && (
         <div className="card mb-4">
@@ -208,6 +248,16 @@ export default function CursoPage() {
                     <option value="D">D</option>
                   </select>
                 </div>
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Descripción</label>
+                <textarea
+                  className="form-control"
+                  rows="3"
+                  value={formulario.descripcion || ''}
+                  onChange={(e) => setFormulario({ ...formulario, descripcion: e.target.value })}
+                  placeholder="Breve descripción del curso"
+                ></textarea>
               </div>
               <div className="row">
                 <div className="col-md-4 mb-3">
@@ -263,6 +313,7 @@ export default function CursoPage() {
                     nombre: '', 
                     nivel: '', 
                     paralelo: '', 
+                    descripcion: '',
                     capacidad: '', 
                     anio: new Date().getFullYear(),
                     estado: 'activo',
@@ -283,8 +334,8 @@ export default function CursoPage() {
 
       {showEstudiantes && (
         <div className="card mb-4">
-          <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Estudiantes del Curso</h5>
+          <div className="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">Estudiantes de {nombreCursoSeleccionado}</h5>
             <button 
               type="button" 
               className="btn btn-sm btn-light"
@@ -294,34 +345,38 @@ export default function CursoPage() {
             </button>
           </div>
           <div className="card-body">
-            {estudiantesCurso.length === 0 ? (
-              <p className="text-muted">No hay estudiantes asignados a este curso</p>
-            ) : (
-              <div className="table-responsive">
-                <table className="table table-sm table-striped">
-                  <thead>
+            <div className="table-responsive">
+              <table className="table table-hover mb-0">
+                <thead className="table-dark">
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Cédula</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {estudiantesCurso.length === 0 ? (
                     <tr>
-                      <th>ID</th>
-                      <th>Nombre</th>
-                      <th>Cédula</th>
-                      <th>Email</th>
-                      <th>Teléfono</th>
+                      <td colSpan="5" className="text-center text-muted py-4">
+                        No hay estudiantes asignados a este curso
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {estudiantesCurso.map(estudiante => (
+                  ) : (
+                    estudiantesCurso.map(estudiante => (
                       <tr key={estudiante.id}>
                         <td>{estudiante.id}</td>
                         <td>{estudiante.nombre}</td>
                         <td>{estudiante.cedula}</td>
-                        <td>{estudiante.email}</td>
-                        <td>{estudiante.telefono}</td>
+                        <td>{estudiante.email || '-'}</td>
+                        <td>{estudiante.telefono || '-'}</td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -333,61 +388,93 @@ export default function CursoPage() {
           </div>
         </div>
       ) : cursos.length === 0 ? (
-        <div className="alert alert-info">
-          No hay cursos registrados. Crear uno nuevo para empezar.
+        <div className="card">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Nivel</th>
+                  <th>Paralelo</th>
+                  <th>Año</th>
+                  <th>Capacidad</th>
+                  <th>Estudiantes</th>
+                  <th>Estado</th>
+                  <th>Profesor</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan="10" className="text-center text-muted py-4">
+                    No hay cursos registrados
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       ) : (
-        <div className="row">
-          {cursos.map(curso => (
-            <div key={curso.id} className="col-md-6 mb-4">
-              <div className="card h-100">
-                <div className="card-header bg-light">
-                  <h5 className="mb-0">{curso.nombre}</h5>
-                  <small className="text-muted">{curso.nivel} {curso.paralelo}</small>
-                </div>
-                <div className="card-body">
-                  <p className="mb-2">
-                    <strong>Año:</strong> {curso.anio}
-                  </p>
-                  <p className="mb-2">
-                    <strong>Estado:</strong> 
-                    <span className={`badge ms-2 ${curso.estado === 'activo' ? 'bg-success' : 'bg-danger'}`}>
-                      {curso.estado}
-                    </span>
-                  </p>
-                  <p className="mb-2">
-                    <strong>Estudiantes:</strong> {curso.totalEstudiantes}
-                    {curso.capacidad && ` / ${curso.capacidad}`}
-                  </p>
-                  {curso.Docentes && curso.Docentes.length > 0 && (
-                    <p className="mb-2">
-                      <strong>Profesor:</strong> {curso.Docentes[0].nombre}
-                    </p>
-                  )}
-                </div>
-                <div className="card-footer bg-light">
-                  <button 
-                    className="btn btn-sm btn-info me-2"
-                    onClick={() => handleVerEstudiantes(curso.id)}
-                  >
-                    <i className="bi bi-eye me-1"></i>Ver Estudiantes
-                  </button>
-                  <button 
-                    className="btn btn-sm btn-warning me-2"
-                    onClick={() => handleEditar(curso)}
-                  >
-                    <i className="bi bi-pencil"></i>
-                  </button>
-                  <button 
-                    className="btn btn-sm btn-danger"
-                    onClick={() => handleEliminar(curso)}
-                  >
-                    <i className="bi bi-trash"></i>
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="card">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Nivel</th>
+                  <th>Paralelo</th>
+                  <th>Año</th>
+                  <th>Capacidad</th>
+                  <th>Estudiantes</th>
+                  <th>Estado</th>
+                  <th>Profesor</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cursos.map(curso => (
+                  <tr key={curso.id}>
+                    <td>{curso.id}</td>
+                    <td>{curso.nombre}</td>
+                    <td>{curso.nivel}</td>
+                    <td>{curso.paralelo}</td>
+                    <td>{curso.anio}</td>
+                    <td>{curso.capacidad || '-'}</td>
+                    <td>{curso.totalEstudiantes}</td>
+                    <td>
+                      <span className={`badge ${curso.estado === 'activo' ? 'bg-success' : 'bg-danger'}`}>
+                        {curso.estado}
+                      </span>
+                    </td>
+                    <td>{curso.Docente?.nombre || 'Sin asignar'}</td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-info me-2"
+                        onClick={() => handleVerEstudiantes(curso.id, curso.nombre)}
+                        title="Ver estudiantes"
+                      >
+                        <i className="bi bi-eye"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm btn-warning me-2"
+                        onClick={() => handleEditar(curso)}
+                      >
+                        <i className="bi bi-pencil"></i>
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleEliminar(curso)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

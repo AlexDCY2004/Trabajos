@@ -4,7 +4,8 @@ import {
     listarAsignaturas, 
     buscarAsignaturaId, 
     actualizarAsignatura, 
-    eliminarAsignatura 
+    eliminarAsignatura,
+    buscarAsignatura
 } from '../controllers/asignaturaController.js';
 
 const router = Router();
@@ -12,6 +13,7 @@ const router = Router();
 //Rutas para asignaturas
 router.post('/', crearAsignatura);
 router.get('/', listarAsignaturas);
+router.get('/buscar', buscarAsignatura);
 router.get('/:id', buscarAsignaturaId);
 router.put('/:id', actualizarAsignatura);
 router.delete('/:id', eliminarAsignatura);

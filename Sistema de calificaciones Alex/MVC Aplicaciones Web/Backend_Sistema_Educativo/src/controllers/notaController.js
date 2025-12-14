@@ -44,8 +44,8 @@ export const listarNotas = async (req, res) => {
             where: filtros,
             include: [
                 { model: Estudiante, attributes: ['id', 'nombre', 'cedula', 'cursoId'] },
-                { model: Asignatura, attributes: ['id', 'nombre'] }
-                // { model: Docente, attributes: ['id', 'nombre'] } // Descomentar si tienes modelo Docente
+                { model: Asignatura, attributes: ['id', 'nombre'] },
+                { model: Docente, attributes: ['id', 'nombre', 'cedula'] }
             ],
             order: orden
         });
@@ -64,8 +64,8 @@ export const obtenerNotaPorId = async (req, res) => {
         const nota = await Nota.findByPk(id, {
             include: [
                 { model: Estudiante },
-                { model: Asignatura }
-                // { model: Docente } // Descomentar si tienes modelo Docente
+                { model: Asignatura },
+                { model: Docente }
             ]
         });
         
@@ -119,6 +119,16 @@ export const crearNota = async (req, res) => {
         if (![1, 2, 3].includes(parseInt(parcial))) {
             return res.status(400).json({ error: "El parcial debe ser 1, 2 o 3" });
         }
+
+        // Validar docente (ahora requerido en UI)
+        if (!docenteId) {
+            return res.status(400).json({ error: "El docente es obligatorio" });
+        }
+
+        const docente = await Docente.findByPk(docenteId);
+        if (!docente) {
+            return res.status(400).json({ error: "El docente no existe" });
+        }
         
         // Validar que las notas estén en rango 0-20
         const notas = [tarea, informe, leccion, examen].map(n => parseFloat(n));
@@ -156,7 +166,8 @@ export const crearNota = async (req, res) => {
         const notaCompleta = await Nota.findByPk(nuevaNota.id, {
             include: [
                 { model: Estudiante, attributes: ['id', 'nombre', 'cedula'] },
-                { model: Asignatura, attributes: ['id', 'nombre'] }
+                { model: Asignatura, attributes: ['id', 'nombre'] },
+                { model: Docente, attributes: ['id', 'nombre', 'cedula'] }
             ]
         });
         
@@ -215,6 +226,10 @@ export const actualizarNota = async (req, res) => {
         }
         
         if (docenteId !== undefined) {
+            const docente = await Docente.findByPk(docenteId);
+            if (!docente) {
+                return res.status(400).json({ error: "El docente no existe" });
+            }
             datosActualizar.docenteId = docenteId;
         }
         
@@ -225,7 +240,8 @@ export const actualizarNota = async (req, res) => {
         const notaActualizada = await Nota.findByPk(id, {
             include: [
                 { model: Estudiante, attributes: ['id', 'nombre', 'cedula'] },
-                { model: Asignatura, attributes: ['id', 'nombre'] }
+                { model: Asignatura, attributes: ['id', 'nombre'] },
+                { model: Docente, attributes: ['id', 'nombre', 'cedula'] }
             ]
         });
         

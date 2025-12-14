@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { listarAsignaturas, crearAsignatura, actualizarAsignatura, eliminarAsignatura } from '../services/asignaturaService';
+import { listarAsignaturas, crearAsignatura, actualizarAsignatura, eliminarAsignatura, buscarAsignatura } from '../services/asignaturaService';
 import { listarDocentes } from '../services/docenteService';
 import Alert from '../components/Alert';
 import ConfirmationModal from '../components/ConfirmationModal';
@@ -12,6 +12,7 @@ export default function AsignaturaPage() {
   const [showModal, setShowModal] = useState(false);
   const [asignaturaAEliminar, setAsignaturaAEliminar] = useState(null);
   const [showFormulario, setShowFormulario] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
   const [formulario, setFormulario] = useState({
     nombre: '',
     codigo: '',
@@ -94,6 +95,24 @@ export default function AsignaturaPage() {
     }
   };
 
+  const handleBuscar = async (e) => {
+    e.preventDefault();
+    if (!busqueda.trim()) {
+      cargarAsignaturas();
+      return;
+    }
+    
+    setCargando(true);
+    try {
+      const data = await buscarAsignatura(busqueda);
+      setAsignaturas(data);
+    } catch (error) {
+      setAsignaturas([]);
+    } finally {
+      setCargando(false);
+    }
+  };
+
   return (
     <div className="container-fluid mt-4">
       <div className="row mb-4">
@@ -126,6 +145,23 @@ export default function AsignaturaPage() {
         type={alert.type}
         onClose={() => setAlert({ show: false })}
       />
+
+      <div className="card mb-4">
+        <div className="card-body">
+          <form onSubmit={handleBuscar} className="input-group">
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar por nombre o código..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+            <button className="btn btn-outline-secondary" type="submit">
+              <i className="bi bi-search"></i>
+            </button>
+          </form>
+        </div>
+      </div>
 
       {showFormulario && (
         <div className="card mb-4">
@@ -208,48 +244,70 @@ export default function AsignaturaPage() {
           </div>
         </div>
       ) : asignaturas.length === 0 ? (
-        <div className="alert alert-info">
-          No hay asignaturas registradas. Crear una nueva para empezar.
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="table table-striped table-hover">
-            <thead className="table-primary">
-              <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Código</th>
-                <th>Créditos</th>
-                <th>Docente</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {asignaturas.map(asignatura => (
-                <tr key={asignatura.id}>
-                  <td>{asignatura.id}</td>
-                  <td>{asignatura.nombre}</td>
-                  <td>{asignatura.codigo}</td>
-                  <td>{asignatura.creditos}</td>
-                  <td>{asignatura.Docente?.nombre || 'Sin asignar'}</td>
-                  <td>
-                    <button 
-                      className="btn btn-sm btn-warning me-2"
-                      onClick={() => handleEditar(asignatura)}
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                    <button 
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleEliminar(asignatura)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
+        <div className="card">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Créditos</th>
+                  <th>Docente</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan="6" className="text-center text-muted py-4">
+                    No hay asignaturas registradas
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="card">
+          <div className="table-responsive">
+            <table className="table table-hover mb-0">
+              <thead className="table-dark">
+                <tr>
+                  <th>ID</th>
+                  <th>Nombre</th>
+                  <th>Código</th>
+                  <th>Créditos</th>
+                  <th>Docente</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {asignaturas.map(asignatura => (
+                  <tr key={asignatura.id}>
+                    <td>{asignatura.id}</td>
+                    <td>{asignatura.nombre}</td>
+                    <td>{asignatura.codigo}</td>
+                    <td>{asignatura.creditos}</td>
+                    <td>{asignatura.Docente?.nombre || 'Sin asignar'}</td>
+                    <td>
+                      <button 
+                        className="btn btn-sm btn-warning me-2"
+                        onClick={() => handleEditar(asignatura)}
+                      >
+                        <i className="bi bi-pencil"></i>
+                      </button>
+                      <button 
+                        className="btn btn-sm btn-danger"
+                        onClick={() => handleEliminar(asignatura)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 

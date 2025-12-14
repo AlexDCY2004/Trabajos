@@ -69,16 +69,38 @@ export const buscarEstudiante = async (req, res) => {
             return res.status(400).json({mensaje: "Debe proporcionar un término de búsqueda"});
         }
 
-        const estudiantes = await Estudiante.findAll({
-            where: {
-                [Op.or]: [
-                    { cedula: { [Op.like]: `%${busqueda}%` } },
-                    { nombre: { [Op.like]: `%${busqueda}%` } },
-                    { id: isNaN(busqueda) ? null : busqueda }
-                ],
-                estado: 'activo'
-            }
-        });
+        const termino = String(busqueda).trim();
+        const esNumerico = !isNaN(termino);
+        const pareceCedula = esNumerico && termino.length >= 7;
+
+        let where;
+        if (esNumerico && !pareceCedula) {
+            // Buscar por ID exacto
+            where = { id: Number(termino), estado: 'activo' };
+        } else if (pareceCedula) {
+            // Buscar por cédula exacta o parcial
+            where = {
+                [Op.and]: [
+                    { estado: 'activo' },
+                    {
+                        [Op.or]: [
+                            { cedula: termino },
+                            { cedula: { [Op.like]: `%${termino}%` } }
+                        ]
+                    }
+                ]
+            };
+        } else {
+            // Buscar por nombre (parcial)
+            where = {
+                [Op.and]: [
+                    { estado: 'activo' },
+                    { nombre: { [Op.like]: `%${termino}%` } }
+                ]
+            };
+        }
+
+        const estudiantes = await Estudiante.findAll({ where });
 
         if(estudiantes.length === 0){
             return res.status(404).json({mensaje: "No se encontraron estudiantes con ese criterio"});

@@ -6,7 +6,8 @@ import {
     ActualizarDocente, 
     eliminarDocente,
     asignarAsignatura,        
-    desasignarAsignatura
+    desasignarAsignatura,
+    buscarDocente
 } from '../controllers/docenteController.js';
 
 const router = express.Router();
@@ -14,6 +15,7 @@ const router = express.Router();
 // CRUD Docente
 router.post("/", crearDocente);
 router.get("/", listarDocentes);
+router.get("/buscar", buscarDocente);
 router.get("/:id", obtenerDocentePorId);
 router.put("/:id", ActualizarDocente);
 router.delete("/:id", eliminarDocente);

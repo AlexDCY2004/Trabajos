@@ -3,6 +3,19 @@ import { listarEstudiantes, crearEstudiante, actualizarEstudiante, eliminarEstud
 import Alert from '../components/Alert';
 import ConfirmationModal from '../components/ConfirmationModal';
 
+function calcularEdad(fechaNacimiento) {
+  if (!fechaNacimiento) return '-';
+  const fn = new Date(fechaNacimiento);
+  if (isNaN(fn.getTime())) return '-';
+  const hoy = new Date();
+  let edad = hoy.getFullYear() - fn.getFullYear();
+  const m = hoy.getMonth() - fn.getMonth();
+  if (m < 0 || (m === 0 && hoy.getDate() < fn.getDate())) {
+    edad--;
+  }
+  return edad;
+}
+
 export default function EstudiantePage() {
   const [estudiantes, setEstudiantes] = useState([]);
   const [cargando, setCargando] = useState(false);
@@ -11,12 +24,17 @@ export default function EstudiantePage() {
   const [estudianteAEliminar, setEstudianteAEliminar] = useState(null);
   const [showFormulario, setShowFormulario] = useState(false);
   const [busqueda, setBusqueda] = useState('');
+  const [showDetalles, setShowDetalles] = useState(false);
+  const [estudianteDetalles, setEstudianteDetalles] = useState(null);
   const [formulario, setFormulario] = useState({
     nombre: '',
     cedula: '',
     email: '',
     telefono: '',
     direccion: '',
+    fechaNacimiento: '',
+    foto: '',
+    cursoId: '',
     estado: 'activo'
   });
   const [editando, setEditando] = useState(null);
@@ -72,7 +90,7 @@ export default function EstudiantePage() {
         setAlert({ show: true, type: 'success', message: 'Estudiante creado correctamente' });
       }
       
-      setFormulario({ nombre: '', cedula: '', email: '', telefono: '', direccion: '', estado: 'activo' });
+      setFormulario({ nombre: '', cedula: '', email: '', telefono: '', direccion: '', fechaNacimiento: '', foto: '', cursoId: '', estado: 'activo' });
       setEditando(null);
       setShowFormulario(false);
       cargarEstudiantes();
@@ -90,6 +108,11 @@ export default function EstudiantePage() {
   const handleEliminar = (estudiante) => {
     setEstudianteAEliminar(estudiante);
     setShowModal(true);
+  };
+
+  const handleVer = (estudiante) => {
+    setEstudianteDetalles(estudiante);
+    setShowDetalles(true);
   };
 
   const confirmarEliminar = async () => {
@@ -118,7 +141,7 @@ export default function EstudiantePage() {
             onClick={() => {
               setShowFormulario(!showFormulario);
               if (showFormulario) {
-                setFormulario({ nombre: '', cedula: '', email: '', telefono: '', direccion: '', estado: 'activo' });
+              setFormulario({ nombre: '', cedula: '', email: '', telefono: '', direccion: '', fechaNacimiento: '', foto: '', cursoId: '', estado: 'activo' });
                 setEditando(null);
               }
             }}
@@ -194,6 +217,37 @@ export default function EstudiantePage() {
                   onChange={(e) => setFormulario({ ...formulario, direccion: e.target.value })}
                 />
               </div>
+              <div className="row">
+                <div className="col-md-4 mb-3">
+                  <label className="form-label">Fecha de Nacimiento</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={formulario.fechaNacimiento}
+                    onChange={(e) => setFormulario({ ...formulario, fechaNacimiento: e.target.value })}
+                  />
+                </div>
+                <div className="col-md-4 mb-3">
+                  <label className="form-label">Foto (URL)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={formulario.foto}
+                    onChange={(e) => setFormulario({ ...formulario, foto: e.target.value })}
+                    placeholder="https://ejemplo.com/foto.jpg"
+                  />
+                </div>
+                <div className="col-md-4 mb-3">
+                  <label className="form-label">Curso</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={formulario.cursoId}
+                    onChange={(e) => setFormulario({ ...formulario, cursoId: e.target.value })}
+                    placeholder="ID del curso"
+                  />
+                </div>
+              </div>
               <div className="mb-3">
                 <label className="form-label">Estado</label>
                 <select
@@ -246,6 +300,8 @@ export default function EstudiantePage() {
                   <th>ID</th>
                   <th>Nombre</th>
                   <th>Cédula</th>
+                  <th>Foto</th>
+                  <th>Edad</th>
                   <th>Email</th>
                   <th>Teléfono</th>
                   <th>Estado</th>
@@ -265,6 +321,14 @@ export default function EstudiantePage() {
                       <td>{estudiante.id}</td>
                       <td>{estudiante.nombre}</td>
                       <td>{estudiante.cedula}</td>
+                      <td>
+                        {estudiante.foto ? (
+                          <img src={estudiante.foto} alt={estudiante.nombre} style={{ maxWidth: '50px', maxHeight: '50px', borderRadius: '4px' }} />
+                        ) : (
+                          <span className="text-muted">-</span>
+                        )}
+                      </td>
+                      <td>{calcularEdad(estudiante.fechaNacimiento)}</td>
                       <td>{estudiante.email || '-'}</td>
                       <td>{estudiante.telefono || '-'}</td>
                       <td>
@@ -273,6 +337,13 @@ export default function EstudiantePage() {
                         </span>
                       </td>
                       <td>
+                        <button
+                          className="btn btn-sm btn-info me-2"
+                          onClick={() => handleVer(estudiante)}
+                          title="Ver detalles"
+                        >
+                          <i className="bi bi-eye"></i>
+                        </button>
                         <button
                           className="btn btn-sm btn-warning me-2"
                           onClick={() => handleEditar(estudiante)}
@@ -305,6 +376,110 @@ export default function EstudiantePage() {
         cancelText="Cancelar"
         isDanger={true}
       />
+
+      {showDetalles && estudianteDetalles && (
+        <div className="modal d-block" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header bg-info text-white">
+                <h5 className="modal-title">Detalles del Estudiante</h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowDetalles(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="row">
+                  <div className="col-md-4 text-center">
+                    {estudianteDetalles.foto ? (
+                      <img
+                        src={estudianteDetalles.foto}
+                        alt={estudianteDetalles.nombre}
+                        style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '10px' }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '200px',
+                          backgroundColor: '#e9ecef',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '10px',
+                          color: '#999'
+                        }}
+                      >
+                        Sin foto
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-md-8">
+                    <h4>{estudianteDetalles.nombre}</h4>
+                    <table className="table table-sm">
+                      <tbody>
+                        <tr>
+                          <th style={{ width: '40%' }}>ID</th>
+                          <td>{estudianteDetalles.id}</td>
+                        </tr>
+                        <tr>
+                          <th>Cédula</th>
+                          <td>{estudianteDetalles.cedula}</td>
+                        </tr>
+                        <tr>
+                          <th>Email</th>
+                          <td>{estudianteDetalles.email || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Teléfono</th>
+                          <td>{estudianteDetalles.telefono || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Edad</th>
+                          <td>{calcularEdad(estudianteDetalles.fechaNacimiento)}</td>
+                        </tr>
+                        <tr>
+                          <th>Fecha Nacimiento</th>
+                          <td>{estudianteDetalles.fechaNacimiento || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Dirección</th>
+                          <td>{estudianteDetalles.direccion || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Curso ID</th>
+                          <td>{estudianteDetalles.cursoId || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Estado</th>
+                          <td>
+                            <span
+                              className={`badge ${estudianteDetalles.estado === 'activo' ? 'bg-success' : 'bg-danger'}`}
+                            >
+                              {estudianteDetalles.estado}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowDetalles(false)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
