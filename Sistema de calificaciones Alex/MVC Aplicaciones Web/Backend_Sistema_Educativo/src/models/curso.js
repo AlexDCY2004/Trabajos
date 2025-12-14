@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
+import { Docente } from "./docente.js";
 
 export const Curso = sequelize.define(
     "Curso",
@@ -37,8 +38,7 @@ export const Curso = sequelize.define(
             validate: {
                 min: 2020,
                 max: 2100
-            },
-            
+            }
         },
         capacidad: { 
             type: DataTypes.INTEGER, 
@@ -47,12 +47,16 @@ export const Curso = sequelize.define(
             validate: {
                 min: 1,
                 max: 100
-            },
-            
+            }
         },
         descripcion: {
             type: DataTypes.TEXT,
             allowNull: true
+        },
+        docenteId: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            comment: "Referencia al docente asignado al curso"
         },
         estado: { 
             type: DataTypes.ENUM('activo', 'inactivo'), 
@@ -65,6 +69,9 @@ export const Curso = sequelize.define(
         timestamps: false
     }
 );
+
+// Asociación con Docente
+Curso.belongsTo(Docente, { foreignKey: 'docenteId', onDelete: 'SET NULL' });
 
 // Nota: las asociaciones con Estudiante se declaran en estudiante.js para evitar imports circulares.
 

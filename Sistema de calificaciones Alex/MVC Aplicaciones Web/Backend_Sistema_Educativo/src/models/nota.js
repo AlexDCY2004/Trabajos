@@ -1,4 +1,3 @@
-
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/database.js";
 import { Estudiante } from "./estudiante.js";
@@ -13,8 +12,7 @@ export const Nota = sequelize.define(
             primaryKey: true, 
             autoIncrement: true 
         },
-        
-        // RELACIONES
+
         estudianteId: { 
             type: DataTypes.INTEGER, 
             allowNull: false 
@@ -27,8 +25,7 @@ export const Nota = sequelize.define(
             type: DataTypes.INTEGER, 
             allowNull: true 
         },
-        
-        // NÚMERO DE PARCIAL (1, 2 o 3)
+
         parcial: { 
             type: DataTypes.INTEGER, 
             allowNull: false,
@@ -38,8 +35,7 @@ export const Nota = sequelize.define(
                 isInt: { msg: "El parcial debe ser 1, 2 o 3" }
             }
         },
-        
-        // LAS 4 EVALUACIONES DEL PARCIAL (cada una sobre 20 puntos)
+
         tarea: { 
             type: DataTypes.FLOAT, 
             allowNull: false, 
@@ -77,21 +73,17 @@ export const Nota = sequelize.define(
             }
         },
         
-        // NOTA FINAL DEL PARCIAL (calculada automáticamente)
-        // Fórmula: tarea*20% + informe*20% + leccion*20% + examen*40%
         notaFinal: { 
             type: DataTypes.FLOAT, 
             allowNull: true,
         },
-        
-        // ESTADO DEL PARCIAL
+
         estado: { 
             type: DataTypes.ENUM('aprobado', 'reprobado', 'pendiente'), 
             allowNull: false, 
             defaultValue: 'pendiente'
         },
-        
-        // DATOS ADICIONALES
+
         observaciones: { 
             type: DataTypes.TEXT, 
             allowNull: true 
@@ -105,8 +97,7 @@ export const Nota = sequelize.define(
     {
         tableName: "notas",
         timestamps: false,
-        
-        // HOOKS: Calcular automáticamente la nota final y estado antes de guardar
+
         hooks: {
             beforeCreate: (nota) => {
                 // Calcular nota final del parcial
@@ -139,7 +130,6 @@ export const Nota = sequelize.define(
     }
 );
 
-// FUNCIÓN AUXILIAR: Calcular la nota final del parcial
 function calcularNotaFinal(tarea, informe, leccion, examen) {
     const notaTarea = parseFloat(tarea) * 0.20;    // 20%
     const notaInforme = parseFloat(informe) * 0.20; // 20%
@@ -158,13 +148,21 @@ Nota.belongsTo(Estudiante, {
     foreignKey: "estudianteId" 
 });
 
-// Asociaciones requeridas por los includes del controlador
-Asignatura.hasMany(Nota, { foreignKey: "asignaturaId", onDelete: "CASCADE" });
-Nota.belongsTo(Asignatura, { foreignKey: "asignaturaId" });
+Asignatura.hasMany(Nota, { 
+    foreignKey: "asignaturaId", 
+    onDelete: "CASCADE" 
+});
+Nota.belongsTo(Asignatura, { 
+    foreignKey: "asignaturaId" 
+});
 
-// Opcional: asociaciones con Docente si se usa en filtros o includes
-Docente.hasMany(Nota, { foreignKey: "docenteId", onDelete: "SET NULL" });
-Nota.belongsTo(Docente, { foreignKey: "docenteId" });
+Docente.hasMany(Nota, { 
+    foreignKey: "docenteId", 
+    onDelete: "SET NULL" 
+});
+Nota.belongsTo(Docente, { 
+    foreignKey: "docenteId" 
+});
 
 
 

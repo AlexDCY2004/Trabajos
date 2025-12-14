@@ -1,16 +1,9 @@
-
-
 import { Nota } from "../models/nota.js";
 import { Estudiante } from "../models/estudiante.js";
 import { Asignatura } from "../models/asignatura.js";
 import { Docente } from "../models/docente.js";
 import { Op } from "sequelize";
 
-// ============================================
-// FUNCIONES AUXILIARES
-// ============================================
-
-// Validar que un número esté entre 0 y 20
 const enRango = (n) => {
     return typeof n === "number" && !isNaN(n) && n >= 0 && n <= 20;
 };
@@ -50,7 +43,7 @@ export const listarNotas = async (req, res) => {
         const notas = await Nota.findAll({
             where: filtros,
             include: [
-                { model: Estudiante, attributes: ['id', 'nombre', 'cedula', 'curso'] },
+                { model: Estudiante, attributes: ['id', 'nombre', 'cedula', 'cursoId'] },
                 { model: Asignatura, attributes: ['id', 'nombre'] }
                 // { model: Docente, attributes: ['id', 'nombre'] } // Descomentar si tienes modelo Docente
             ],
@@ -323,7 +316,7 @@ export const obtenerNotasEstudiante = async (req, res) => {
                 id: estudiante.id,
                 nombre: estudiante.nombre,
                 cedula: estudiante.cedula,
-                curso: estudiante.curso
+                cursoId: estudiante.cursoId
             },
             asignaturas: Object.values(notasPorAsignatura)
         });
@@ -352,20 +345,12 @@ export const obtenerEstadoAcademico = async (req, res) => {
         
         // Obtener las notas de los 3 parciales
         const notas = await Nota.findAll({
-            where: { 
-                estudianteId, 
-                asignaturaId 
-            },
+            where: { estudianteId, asignaturaId },
             order: [['parcial', 'ASC']]
         });
-        
+
         // Organizar notas por parcial
-        const parciales = {
-            1: null,
-            2: null,
-            3: null
-        };
-        
+        const parciales = { 1: null, 2: null, 3: null };
         notas.forEach(nota => {
             parciales[nota.parcial] = {
                 tarea: nota.tarea,
@@ -376,27 +361,30 @@ export const obtenerEstadoAcademico = async (req, res) => {
                 estado: nota.estado
             };
         });
-        
-        // Calcular totales y estado
+
+        // Calcular totales
         const notaParcial1 = parciales[1]?.notaFinal || 0;
         const notaParcial2 = parciales[2]?.notaFinal || 0;
         const notaParcial3 = parciales[3]?.notaFinal || 0;
-        
+
         const sumaParcial1y2 = notaParcial1 + notaParcial2;
-        const promedioSemestre = notaParcial1 + notaParcial2 + notaParcial3;
-        
+        const totalSemestre = notaParcial1 + notaParcial2 + notaParcial3; // suma de los 3 parciales
+        const promedioFinal = parseFloat((totalSemestre / 3).toFixed(2)); // promedio de los 3 parciales
+        const UMBRAL_APROBACION_SEMESTRE = 42.10;
+
         // Determinar estado académico
         let estadoSemestre = 'pendiente';
         let mensajeEstado = '';
-        
-        // Verificar reprobación anticipada (P1 + P2 < 28)
+
         if (parciales[1] && parciales[2]) {
             if (sumaParcial1y2 < 28) {
                 estadoSemestre = 'reprobado_anticipado';
                 mensajeEstado = 'Reprobado anticipadamente. La suma del Parcial 1 y Parcial 2 es menor a 28 puntos.';
-            } else if (parciales[3]) {
-                // Si tiene los 3 parciales, evaluar el semestre completo
-                if (promedioSemestre >= 28) { // Ajusta este valor según tu sistema
+            } else if (!parciales[3]) {
+                estadoSemestre = 'pendiente';
+                mensajeEstado = 'Pendiente del Parcial 3 para evaluar el semestre.';
+            } else {
+                if (totalSemestre >= UMBRAL_APROBACION_SEMESTRE) {
                     estadoSemestre = 'aprobado';
                     mensajeEstado = 'Aprobó el semestre';
                 } else {
@@ -404,25 +392,22 @@ export const obtenerEstadoAcademico = async (req, res) => {
                     mensajeEstado = 'Reprobó el semestre';
                 }
             }
+        } else {
+            estadoSemestre = 'pendiente';
+            mensajeEstado = 'Pendiente de completar Parcial 1 y Parcial 2.';
         }
-        
+
         return res.json({
-            estudiante: {
-                id: estudiante.id,
-                nombre: estudiante.nombre,
-                cedula: estudiante.cedula
-            },
-            asignatura: {
-                id: asignatura.id,
-                nombre: asignatura.nombre
-            },
+            estudiante: { id: estudiante.id, nombre: estudiante.nombre, cedula: estudiante.cedula },
+            asignatura: { id: asignatura.id, nombre: asignatura.nombre },
             parciales,
             resumen: {
                 notaParcial1,
                 notaParcial2,
                 notaParcial3,
                 sumaParcial1y2,
-                promedioSemestre,
+                suma3Parciales: totalSemestre, // nuevo nombre
+                promedioFinal,                  // nuevo campo
                 estadoSemestre,
                 mensajeEstado
             }
