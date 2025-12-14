@@ -61,3 +61,23 @@ export const calcularPromedioEstudiante = async (estudianteId) => {
     throw error;
   }
 };
+
+// Historial completo de notas por estudiante
+export const obtenerHistorialNotas = async (estudianteId) => {
+  try {
+    const response = await apiClient.get(`/api/notas/estudiante/${estudianteId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Resumen académico por asignatura (3 parciales + estado)
+export const obtenerEstadoAcademico = async (estudianteId, asignaturaId) => {
+  try {
+    const response = await apiClient.get(`/api/notas/estudiante/${estudianteId}/asignatura/${asignaturaId}`);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

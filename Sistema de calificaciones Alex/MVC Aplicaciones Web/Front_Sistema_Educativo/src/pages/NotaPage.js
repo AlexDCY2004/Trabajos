@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { listarNotas, crearNota, actualizarNota, eliminarNota } from '../services/notaService';
-import { listarEstudiantes } from '../services/estudianteService';
+import { listarNotas, crearNota, actualizarNota, eliminarNota, obtenerHistorialNotas, obtenerEstadoAcademico } from '../services/notaService';
+import { listarEstudiantes, buscarEstudiante } from '../services/estudianteService';
 import { listarDocentes } from '../services/docenteService';
 import { listarAsignaturas } from '../services/asignaturaService';
 import Alert from '../components/Alert';
@@ -16,6 +16,7 @@ export default function NotaPage() {
   const [showModal, setShowModal] = useState(false);
   const [notaAEliminar, setNotaAEliminar] = useState(null);
   const [showFormulario, setShowFormulario] = useState(false);
+  const [mostrarHistorial, setMostrarHistorial] = useState(false);
   const [filtros, setFiltros] = useState({
     estudianteId: '',
     docenteId: '',
@@ -34,6 +35,12 @@ export default function NotaPage() {
     observaciones: ''
   });
   const [editando, setEditando] = useState(null);
+  const [terminoBusqueda, setTerminoBusqueda] = useState('');
+  const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  const [historial, setHistorial] = useState(null);
+  const [cargandoResumen, setCargandoResumen] = useState(false);
+  const [resumenSeleccionado, setResumenSeleccionado] = useState(null);
 
   useEffect(() => {
     cargarDatos();
@@ -149,6 +156,69 @@ export default function NotaPage() {
     ).toFixed(2);
   };
 
+  const buscarHistorial = async () => {
+    if (!terminoBusqueda.trim()) {
+      setAlert({ show: true, type: 'warning', message: 'Ingrese cédula o nombre para buscar.' });
+      return;
+    }
+
+    setCargandoHistorial(true);
+    setHistorial(null);
+
+    try {
+      const resultados = await buscarEstudiante(terminoBusqueda.trim());
+      const lista = Array.isArray(resultados) ? resultados : [resultados];
+      setResultadosBusqueda(lista);
+      if (lista.length === 1) {
+        await seleccionarEstudiante(lista[0]);
+      }
+    } catch (error) {
+      setResultadosBusqueda([]);
+      setHistorial(null);
+      const mensaje = error?.response?.data?.mensaje || error.message || 'Error al buscar estudiante';
+      setAlert({ show: true, type: 'danger', message: mensaje });
+    } finally {
+      setCargandoHistorial(false);
+    }
+  };
+
+  const seleccionarEstudiante = async (estudiante) => {
+    setCargandoHistorial(true);
+    setHistorial(null);
+    setResumenSeleccionado(null);
+
+    try {
+      const data = await obtenerHistorialNotas(estudiante.id);
+      setHistorial(data);
+    } catch (error) {
+      const mensaje = error?.response?.data?.error || error.message || 'Error al cargar historial';
+      setAlert({ show: true, type: 'danger', message: mensaje });
+    } finally {
+      setCargandoHistorial(false);
+    }
+  };
+
+  const badgeEstado = (estado) => {
+    if (estado === 'aprobado' || estado === 'aprobado_anticipado') return 'bg-success';
+    if (estado && estado.includes('reprobado')) return 'bg-danger';
+    return 'bg-secondary';
+  };
+
+  const verResumenAsignatura = async (asig) => {
+    if (!historial?.estudiante?.id) return;
+    setCargandoResumen(true);
+    setResumenSeleccionado(null);
+    try {
+      const data = await obtenerEstadoAcademico(historial.estudiante.id, asig.asignaturaId);
+      setResumenSeleccionado({ asignaturaId: asig.asignaturaId, data });
+    } catch (error) {
+      const mensaje = error?.response?.data?.error || error.message || 'Error al cargar resumen';
+      setAlert({ show: true, type: 'danger', message: mensaje });
+    } finally {
+      setCargandoResumen(false);
+    }
+  };
+
   return (
     <div className="container-fluid mt-4">
       <div className="row mb-4">
@@ -168,6 +238,13 @@ export default function NotaPage() {
           >
             <i className="bi bi-plus-lg me-2"></i>
             {showFormulario ? 'Cerrar' : 'Nueva Nota'}
+          </button>
+          <button
+            className="btn btn-outline-info"
+            onClick={() => setMostrarHistorial(!mostrarHistorial)}
+          >
+            <i className="bi bi-clock-history me-2"></i>
+            {mostrarHistorial ? 'Ocultar historial' : 'Historial académico'}
           </button>
         </div>
       </div>
@@ -340,6 +417,168 @@ export default function NotaPage() {
                 {editando ? 'Actualizar' : 'Guardar'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {mostrarHistorial && (
+        <div className="card mb-4">
+          <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
+            <h5 className="mb-0">Historial académico</h5>
+            <small>Busca por cédula o nombre</small>
+          </div>
+          <div className="card-body">
+            <div className="row g-2 align-items-end mb-3">
+              <div className="col-md-6">
+                <label className="form-label">Estudiante</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Ej: 0102030405 o Juan"
+                  value={terminoBusqueda}
+                  onChange={(e) => setTerminoBusqueda(e.target.value)}
+                />
+              </div>
+              <div className="col-md-3">
+                <button className="btn btn-info w-100" onClick={buscarHistorial} disabled={cargandoHistorial}>
+                  <i className="bi bi-search me-2"></i>
+                  Buscar
+                </button>
+              </div>
+            </div>
+
+            {cargandoHistorial && (
+              <div className="text-center my-3">
+                <div className="spinner-border" role="status">
+                  <span className="visually-hidden">Cargando...</span>
+                </div>
+              </div>
+            )}
+
+            {!cargandoHistorial && resultadosBusqueda.length > 1 && (
+              <div className="table-responsive mb-3">
+                <table className="table table-sm align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Cédula</th>
+                      <th>Curso</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {resultadosBusqueda.map((est) => (
+                      <tr key={est.id}>
+                        <td>{est.nombre}</td>
+                        <td>{est.cedula}</td>
+                        <td>{est.cursoId || 'N/A'}</td>
+                        <td className="text-end">
+                          <button className="btn btn-sm btn-outline-primary" onClick={() => seleccionarEstudiante(est)}>
+                            Ver historial
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            {historial && (
+              <div>
+                <div className="alert alert-secondary d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>{historial.estudiante?.nombre}</strong> ({historial.estudiante?.cedula})
+                    {historial.estudiante?.cursoId && <span className="ms-2">Curso: {historial.estudiante.cursoId}</span>}
+                  </div>
+                  <span className={`badge ${badgeEstado(historial.resumen?.estadoSemestre)}`}>
+                    {historial.resumen?.estadoSemestre || 'pendiente'}
+                  </span>
+                </div>
+
+                {historial.asignaturas?.length === 0 && (
+                  <p className="text-muted mb-0">Sin notas registradas.</p>
+                )}
+
+                {historial.asignaturas?.map((asig) => (
+                  <div key={asig.asignaturaId} className="mb-4">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0">{asig.asignaturaNombre}</h6>
+                      <button
+                        className="btn btn-sm btn-outline-info"
+                        onClick={() => verResumenAsignatura(asig)}
+                        disabled={cargandoResumen}
+                      >
+                        <i className="bi bi-clipboard-data me-1"></i>
+                        Ver resumen
+                      </button>
+                    </div>
+                    <div className="table-responsive">
+                      <table className="table table-sm table-bordered">
+                        <thead className="table-light">
+                          <tr>
+                            <th>Parcial</th>
+                            <th>Tarea</th>
+                            <th>Informe</th>
+                            <th>Lección</th>
+                            <th>Examen</th>
+                            <th>Nota final</th>
+                            <th>Estado</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {[1, 2, 3].map((num) => {
+                            const parcial = asig.parciales[num];
+                            return (
+                              <tr key={num}>
+                                <td>Parcial {num}</td>
+                                <td>{parcial?.tarea ?? '-'}</td>
+                                <td>{parcial?.informe ?? '-'}</td>
+                                <td>{parcial?.leccion ?? '-'}</td>
+                                <td>{parcial?.examen ?? '-'}</td>
+                                <td>{parcial?.notaFinal ?? '-'}</td>
+                                <td>
+                                  {parcial ? (
+                                    <span className={`badge ${badgeEstado(parcial.estado)}`}>
+                                      {parcial.estado || 'pendiente'}
+                                    </span>
+                                  ) : (
+                                    <span className="text-muted">Sin registro</span>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {resumenSeleccionado && resumenSeleccionado.asignaturaId === asig.asignaturaId && (
+                      <div className="mt-2 p-3 border rounded bg-light">
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                          <strong>Resumen de semestre</strong>
+                          {cargandoResumen && (
+                            <div className="spinner-border spinner-border-sm" role="status">
+                              <span className="visually-hidden">Cargando...</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="row g-2">
+                          <div className="col-md-3"><small className="text-muted">Parcial 1</small><div>{resumenSeleccionado.data?.resumen?.notaParcial1 ?? '-'}</div></div>
+                          <div className="col-md-3"><small className="text-muted">Parcial 2</small><div>{resumenSeleccionado.data?.resumen?.notaParcial2 ?? '-'}</div></div>
+                          <div className="col-md-3"><small className="text-muted">Parcial 3</small><div>{resumenSeleccionado.data?.resumen?.notaParcial3 ?? '-'}</div></div>
+                          <div className="col-md-3"><small className="text-muted">Promedio</small><div>{resumenSeleccionado.data?.resumen?.promedioFinal ?? '-'}</div></div>
+                          <div className="col-md-3"><small className="text-muted">Suma P1+P2</small><div>{resumenSeleccionado.data?.resumen?.sumaParcial1y2 ?? '-'}</div></div>
+                          <div className="col-md-3"><small className="text-muted">Suma 3 parciales</small><div>{resumenSeleccionado.data?.resumen?.suma3Parciales ?? '-'}</div></div>
+                          <div className="col-md-3"><small className="text-muted">Estado</small><div><span className={`badge ${badgeEstado(resumenSeleccionado.data?.resumen?.estadoSemestre)}`}>{resumenSeleccionado.data?.resumen?.estadoSemestre || 'pendiente'}</span></div></div>
+                          <div className="col-md-12"><small className="text-muted">Mensaje</small><div>{resumenSeleccionado.data?.resumen?.mensajeEstado || 'Sin mensaje'}</div></div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
