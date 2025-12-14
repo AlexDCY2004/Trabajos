@@ -12,6 +12,8 @@ import notaRoute from './src/routes/notaRoute.js';
 import asignaturaRoute from './src/routes/asignaturaRoute.js';
 import docenteRoute from './src/routes/docenteRoutes.js';
 import cursoRoute from './src/routes/cursoRoute.js';
+import authRoute from './src/routes/authRoute.js';
+import { Usuario } from './src/models/usuario.js';
 
 //inicializar la app
 const app = express();
@@ -36,12 +38,30 @@ app.use('/api/notas', notaRoute);
 app.use('/api/asignaturas', asignaturaRoute);
 app.use('/api/docentes', docenteRoute);
 app.use('/api/cursos', cursoRoute);
+app.use('/api/auth', authRoute);
 
 
-//conexion a la base de datos
 dbConnect();
 sequelize.sync({ alter: true }).then(() => {
     console.log('Base de datos sincronizada');
+    // Seed de usuario admin si no existe para permitir login
+    (async () => {
+        try {
+            const total = await Usuario.count();
+            if (total === 0) {
+                await Usuario.create({
+                    username: 'admin',
+                    password: 'admin123',
+                    email: 'admin@escuela.com',
+                    rol: 'admin',
+                    estado: 'activo'
+                });
+                console.log('Usuario admin creado por defecto (admin/admin123)');
+            }
+        } catch (e) {
+            console.error('Error al crear usuario por defecto:', e.message);
+        }
+    })();
 }).catch((error) => {
     console.error('Error al sincronizar la base de datos:', error);
 });
