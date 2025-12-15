@@ -9,23 +9,38 @@ export const Usuario = sequelize.define(
             type: DataTypes.STRING(50),
             allowNull: false,
             unique: true,
+            set(value) { this.setDataValue('username', value?.trim().toLowerCase()); },
             validate: {
-                notEmpty: { msg: "El usuario no puede estar vacío" }
+                notEmpty: { msg: "El usuario no puede estar vacío" },
+                len: {
+                    args: [3, 50],
+                    msg: "El usuario debe tener entre 3 y 50 caracteres"
+                },
+                is: {
+                    args: /^[a-z0-9_\-]+$/,
+                    msg: "El usuario solo puede contener letras minúsculas, números, guiones y guiones bajos"
+                }
             }
         },
         password: {
             type: DataTypes.STRING(255),
             allowNull: false,
             validate: {
-                notEmpty: { msg: "La contraseña no puede estar vacía" }
+                notEmpty: { msg: "La contraseña no puede estar vacía" },
+                len: {
+                    args: [6, 255],
+                    msg: "La contraseña debe tener al menos 6 caracteres"
+                }
             }
         },
         email: {
             type: DataTypes.STRING(100),
             allowNull: false,
             unique: true,
+            set(value) { this.setDataValue('email', value?.trim().toLowerCase()); },
             validate: {
-                isEmail: { msg: "Email inválido" }
+                isEmail: { msg: "El formato del email no es válido" },
+                notEmpty: { msg: "El email no puede estar vacío" }
             }
         },
         rol: {

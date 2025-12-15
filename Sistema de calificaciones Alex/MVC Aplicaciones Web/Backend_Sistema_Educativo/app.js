@@ -20,6 +20,7 @@ import cursoRoute from './src/routes/cursoRoute.js';
 import authRoute from './src/routes/authRoute.js';
 import dashboardRoute from './src/routes/dashboardRoute.js';
 import uploadRoute from './src/routes/uploadRoute.js';
+import consultaRoute from './src/routes/consultaRoute.js';
 import { Usuario } from './src/models/usuario.js';
 
 //inicializar la app
@@ -51,16 +52,18 @@ app.use('/api/cursos', cursoRoute);
 app.use('/api/auth', authRoute);
 app.use('/api/dashboard', dashboardRoute);
 app.use('/api/upload', uploadRoute);
+app.use('/api/consultas', consultaRoute);
 
 
 dbConnect();
 sequelize.sync({ alter: true }).then(() => {
     console.log('Base de datos sincronizada');
-    // Seed de usuario admin si no existe para permitir login
+    // Seed de usuarios por defecto
     (async () => {
         try {
-            const total = await Usuario.count();
-            if (total === 0) {
+            // Verificar y crear usuario admin
+            const admin = await Usuario.findOne({ where: { username: 'admin' } });
+            if (!admin) {
                 await Usuario.create({
                     username: 'admin',
                     password: 'admin123',
@@ -68,10 +71,38 @@ sequelize.sync({ alter: true }).then(() => {
                     rol: 'admin',
                     estado: 'activo'
                 });
-                console.log('Usuario admin creado por defecto (admin/admin123)');
+                console.log('✓ Usuario admin creado (admin / admin123)');
             }
+
+            // Verificar y crear usuario docente
+            const docente = await Usuario.findOne({ where: { username: 'docente_martinez' } });
+            if (!docente) {
+                await Usuario.create({
+                    username: 'docente_martinez',
+                    password: 'docente123',
+                    email: 'martinez@escuela.com',
+                    rol: 'docente',
+                    estado: 'activo'
+                });
+                console.log('✓ Usuario docente creado (docente_martinez / docente123)');
+            }
+
+            // Verificar y crear usuario estudiante
+            const estudiante = await Usuario.findOne({ where: { username: 'estudiante_juan' } });
+            if (!estudiante) {
+                await Usuario.create({
+                    username: 'estudiante_juan',
+                    password: 'estudiante123',
+                    email: 'juan.perez@escuela.com',
+                    rol: 'estudiante',
+                    estado: 'activo'
+                });
+                console.log('✓ Usuario estudiante creado (estudiante_juan / estudiante123)');
+            }
+            
+            console.log('✓ Usuarios por defecto verificados');
         } catch (e) {
-            console.error('Error al crear usuario por defecto:', e.message);
+            console.error('Error al crear usuarios por defecto:', e.message);
         }
     })();
 }).catch((error) => {

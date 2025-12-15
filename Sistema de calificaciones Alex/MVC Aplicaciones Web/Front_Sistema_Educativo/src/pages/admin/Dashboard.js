@@ -10,6 +10,271 @@ import CursoPage from '../CursoPage';
 import { obtenerResumenDashboard } from '../../services/dashboardService';
 
 // Subpáginas del Dashboard
+// Inicio para Estudiantes (con cards adaptadas)
+function InicioEstudiante() {
+  const usuario = obtenerUsuarioActual();
+  const base = '/estudiante';
+
+  return (
+    <div className="container mt-4">
+      <h2>
+        <i className="bi bi-house-door-fill me-2"></i>
+        Panel de Inicio
+      </h2>
+      <p className="text-muted">Bienvenido al Sistema de Gestión Académica</p>
+      
+      <div className="row mt-4">
+        <div className="col-md-6 mb-3">
+          <a href={`${base}/notas`} className="text-decoration-none">
+            <div className="card text-white bg-info h-100 hover-shadow" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
+              <div className="card-body">
+                <h5 className="card-title">
+                  <i className="bi bi-book me-2"></i>
+                  Mis Notas y Calificaciones
+                </h5>
+                <p className="card-text">Ver mi historial académico, calificaciones por parcial y resumen del semestre</p>
+                <small className="text-white-50">
+                  <i className="bi bi-arrow-right-circle me-1"></i>
+                  Click para ver
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div className="col-md-6 mb-3">
+          <a href={`${base}/ayuda`} className="text-decoration-none">
+            <div className="card text-white bg-success h-100 hover-shadow" style={{ cursor: 'pointer', transition: 'transform 0.2s' }}>
+              <div className="card-body">
+                <h5 className="card-title">
+                  <i className="bi bi-question-circle me-2"></i>
+                  Centro de Ayuda
+                </h5>
+                <p className="card-text">Enviar consultas, reportar problemas o solicitar soporte técnico</p>
+                <small className="text-white-50">
+                  <i className="bi bi-arrow-right-circle me-1"></i>
+                  Click para acceder
+                </small>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <div className="row mt-4">
+        <div className="col-md-6 mb-3">
+          <div className="card">
+            <div className="card-header bg-warning text-dark">
+              <h5 className="mb-0">
+                <i className="bi bi-bell-fill me-2"></i>
+                Notificaciones
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="list-group list-group-flush">
+                <div className="list-group-item">
+                  <div className="d-flex align-items-start">
+                    <i className="bi bi-file-earmark-text-fill text-success me-3 fs-5"></i>
+                    <div>
+                      <h6 className="mb-1">Nuevas calificaciones disponibles</h6>
+                      <p className="text-muted mb-0 small">Parcial 2 - Matemática</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="list-group-item">
+                  <div className="d-flex align-items-start">
+                    <i className="bi bi-calendar-event-fill text-info me-3 fs-5"></i>
+                    <div>
+                      <h6 className="mb-1">Próximo evento: Examen Final</h6>
+                      <p className="text-muted mb-0 small">15 de Diciembre, 2025</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="list-group-item">
+                  <div className="d-flex align-items-start">
+                    <i className="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                    <div>
+                      <h6 className="mb-1">Sistema actualizado</h6>
+                      <p className="text-muted mb-0 small">Versión 2.0 - Nuevas funcionalidades</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6 mb-3">
+          <div className="card">
+            <div className="card-header bg-primary text-white">
+              <h5 className="mb-0">
+                <i className="bi bi-calendar3 me-2"></i>
+                Calendario de Próximos Eventos
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="mb-3">
+                <div className="border rounded p-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="bg-primary text-white rounded p-2 me-3">
+                      <strong>15</strong><br/>
+                      <small>DIC</small>
+                    </div>
+                    <div>
+                      <h6 className="mb-0">Exámenes Finales</h6>
+                      <small className="text-muted">Parcial 3 - Todas las materias</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mb-3">
+                <div className="border rounded p-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="bg-success text-white rounded p-2 me-3">
+                      <strong>20</strong><br/>
+                      <small>DIC</small>
+                    </div>
+                    <div>
+                      <h6 className="mb-0">Entrega de Calificaciones</h6>
+                      <small className="text-muted">Cierre de semestre</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="border rounded p-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="bg-info text-white rounded p-2 me-3">
+                      <strong>05</strong><br/>
+                      <small>ENE</small>
+                    </div>
+                    <div>
+                      <h6 className="mb-0">Inicio Nuevo Semestre</h6>
+                      <small className="text-muted">Matrícula y asignaciones</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Inicio para Docentes (solo notificaciones y calendario)
+function InicioDocente() {
+  return (
+    <div className="container mt-4">
+      <h2>
+        <i className="bi bi-house-door-fill me-2"></i>
+        Panel de Inicio - Docente
+      </h2>
+      <p className="text-muted">Bienvenido al Sistema de Gestión Académica</p>
+
+      <div className="row mt-4">
+        <div className="col-md-6 mb-3">
+          <div className="card">
+            <div className="card-header bg-warning text-dark">
+              <h5 className="mb-0">
+                <i className="bi bi-bell-fill me-2"></i>
+                Notificaciones Recientes
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="list-group list-group-flush">
+                <div className="list-group-item">
+                  <div className="d-flex align-items-start">
+                    <i className="bi bi-exclamation-triangle-fill text-warning me-3 fs-5"></i>
+                    <div>
+                      <h6 className="mb-1">Notas pendientes de registro</h6>
+                      <p className="text-muted mb-0 small">Recuerda completar el ingreso de notas del Parcial 2</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="list-group-item">
+                  <div className="d-flex align-items-start">
+                    <i className="bi bi-calendar-event-fill text-info me-3 fs-5"></i>
+                    <div>
+                      <h6 className="mb-1">Próximo evento: Examen Final</h6>
+                      <p className="text-muted mb-0 small">15 de Diciembre, 2025</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="list-group-item">
+                  <div className="d-flex align-items-start">
+                    <i className="bi bi-check-circle-fill text-success me-3 fs-5"></i>
+                    <div>
+                      <h6 className="mb-1">Sistema actualizado</h6>
+                      <p className="text-muted mb-0 small">Versión 2.0 - Nuevas funcionalidades</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="col-md-6 mb-3">
+          <div className="card">
+            <div className="card-header bg-primary text-white">
+              <h5 className="mb-0">
+                <i className="bi bi-calendar3 me-2"></i>
+                Calendario de Próximos Eventos
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="mb-3">
+                <div className="border rounded p-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="bg-primary text-white rounded p-2 me-3">
+                      <strong>15</strong><br/>
+                      <small>DIC</small>
+                    </div>
+                    <div>
+                      <h6 className="mb-0">Exámenes Finales</h6>
+                      <small className="text-muted">Parcial 3 - Todas las materias</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mb-3">
+                <div className="border rounded p-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="bg-success text-white rounded p-2 me-3">
+                      <strong>20</strong><br/>
+                      <small>DIC</small>
+                    </div>
+                    <div>
+                      <h6 className="mb-0">Entrega de Calificaciones</h6>
+                      <small className="text-muted">Cierre de semestre</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="border rounded p-3">
+                  <div className="d-flex align-items-center mb-2">
+                    <div className="bg-info text-white rounded p-2 me-3">
+                      <strong>05</strong><br/>
+                      <small>ENE</small>
+                    </div>
+                    <div>
+                      <h6 className="mb-0">Inicio Nuevo Semestre</h6>
+                      <small className="text-muted">Matrícula y asignaciones</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Inicio para Admin y Estudiantes (con cards de navegación)
 function InicioPage() {
   const usuario = obtenerUsuarioActual();
   const rolActual = usuario?.rol || 'admin';
@@ -668,42 +933,69 @@ export default function AdminDashboard() {
             Sistema Académico
           </Link>
           <ul className="navbar-nav me-auto">
+            {/* Enlace de Inicio (visible para todos) */}
             <li className="nav-item">
               <Link className="nav-link" to={`${base}/inicio`}>
                 <i className="bi bi-house-door me-1"></i>
                 Inicio
               </Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link" to={`${base}/estudiante`}>
-                <i className="bi bi-people me-1"></i>
-                Estudiante
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to={`${base}/docente`}>
-                <i className="bi bi-person-badge me-1"></i>
-                Docente
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to={`${base}/asignatura`}>
-                <i className="bi bi-book me-1"></i>
-                Asignatura
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to={`${base}/curso`}>
-                <i className="bi bi-building me-1"></i>
-                Curso
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link" to={`${base}/notas`}>
-                <i className="bi bi-file-earmark-text me-1"></i>
-                Notas
-              </Link>
-            </li>
+
+            {/* Opciones solo para ADMIN */}
+            {rolActual === 'admin' && (
+              <>
+                <li className="nav-item">
+                  <Link className="nav-link" to={`${base}/estudiante`}>
+                    <i className="bi bi-people me-1"></i>
+                    Estudiante
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to={`${base}/docente`}>
+                    <i className="bi bi-person-badge me-1"></i>
+                    Docente
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  <Link className="nav-link" to={`${base}/asignatura`}>
+                    <i className="bi bi-book me-1"></i>
+                    Asignatura
+                  </Link>
+                </li>
+              </>
+            )}
+
+            {/* Curso - visible para ADMIN y DOCENTE */}
+            {(rolActual === 'admin' || rolActual === 'docente') && (
+              <li className="nav-item">
+                <Link className="nav-link" to={`${base}/curso`}>
+                  <i className="bi bi-building me-1"></i>
+                  Curso
+                </Link>
+              </li>
+            )}
+
+            {/* Notas - visible para ADMIN y DOCENTE */}
+            {(rolActual === 'admin' || rolActual === 'docente') && (
+              <li className="nav-item">
+                <Link className="nav-link" to={`${base}/notas`}>
+                  <i className="bi bi-file-earmark-text me-1"></i>
+                  Notas
+                </Link>
+              </li>
+            )}
+
+            {/* Notas de solo lectura para ESTUDIANTE */}
+            {rolActual === 'estudiante' && (
+              <li className="nav-item">
+                <Link className="nav-link" to={`${base}/notas`}>
+                  <i className="bi bi-file-earmark-text me-1"></i>
+                  Mis Notas
+                </Link>
+              </li>
+            )}
+
+            {/* Ayuda (visible para todos) */}
             <li className="nav-item">
               <Link className="nav-link" to={`${base}/ayuda`}>
                 <i className="bi bi-question-circle me-1"></i>
@@ -713,7 +1005,7 @@ export default function AdminDashboard() {
           </ul>
           <div className="d-flex align-items-center text-white">
             <i className="bi bi-person-circle me-2"></i>
-            <span className="me-3">{usuario?.username}</span>
+            <span className="me-3">{usuario?.username} <small className="text-muted">({rolActual})</small></span>
             <button className="btn btn-outline-light btn-sm" onClick={handleLogout}>
               <i className="bi bi-box-arrow-right me-1"></i>
               Salir
@@ -726,7 +1018,11 @@ export default function AdminDashboard() {
       <div className="flex-grow-1">
         <Routes>
           <Route path="/" element={<Navigate to={`${base}/inicio`} replace />} />
-          <Route path="/inicio" element={<InicioPage />} />
+          <Route path="/inicio" element={
+            rolActual === 'docente' ? <InicioDocente /> : 
+            rolActual === 'estudiante' ? <InicioEstudiante /> : 
+            <InicioPage />
+          } />
           <Route path="/estudiante" element={<EstudiantePage />} />
           <Route path="/docente" element={<DocentePage />} />
           <Route path="/asignatura" element={<AsignaturaPage />} />

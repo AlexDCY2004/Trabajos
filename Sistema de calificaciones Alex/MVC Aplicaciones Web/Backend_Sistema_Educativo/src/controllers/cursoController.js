@@ -160,14 +160,36 @@ export const crearCurso = async (req, res) => {
     try {
         const { nombre, nivel, paralelo, anio, capacidad, descripcion, estado, docenteId } = req.body;
         
-        if (!nombre) {
+        // Validaciones
+        if (!nombre || !nombre.trim()) {
             return res.status(400).json({ error: "El nombre del curso es obligatorio" });
+        }
+
+        // Validar longitud de nombre
+        if (nombre.trim().length < 3 || nombre.trim().length > 100) {
+            return res.status(400).json({ error: "El nombre debe tener entre 3 y 100 caracteres" });
         }
         
         // Verificar si ya existe un curso con ese nombre
-        const cursoExistente = await Curso.findOne({ where: { nombre } });
+        const cursoExistente = await Curso.findOne({ where: { nombre: nombre.trim() } });
         if (cursoExistente) {
             return res.status(400).json({ error: "Ya existe un curso con ese nombre" });
+        }
+
+        // Validar año si se proporciona
+        if (anio !== undefined && anio !== null) {
+            const anioNum = parseInt(anio);
+            if (isNaN(anioNum) || anioNum < 2020 || anioNum > 2100) {
+                return res.status(400).json({ error: "El año debe estar entre 2020 y 2100" });
+            }
+        }
+
+        // Validar capacidad si se proporciona
+        if (capacidad !== undefined && capacidad !== null) {
+            const capacidadNum = parseInt(capacidad);
+            if (isNaN(capacidadNum) || capacidadNum < 1 || capacidadNum > 100) {
+                return res.status(400).json({ error: "La capacidad debe estar entre 1 y 100 estudiantes" });
+            }
         }
         
         // Verificar que el docente existe (si se proporciona)
@@ -179,7 +201,7 @@ export const crearCurso = async (req, res) => {
         }
         
         const nuevoCurso = await Curso.create({
-            nombre,
+            nombre: nombre.trim(),
             nivel,
             paralelo,
             anio,
@@ -201,6 +223,10 @@ export const crearCurso = async (req, res) => {
         res.status(201).json(cursoConDocente);
     } catch (error) {
         console.error("Error al crear curso:", error);
+        if (error?.name === 'SequelizeValidationError' || error?.name === 'SequelizeUniqueConstraintError') {
+            const detalles = error.errors?.map(e => e.message).join('; ');
+            return res.status(400).json({ error: detalles || 'Error de validación' });
+        }
         res.status(500).json({ error: "Error al crear el curso: " + error.message });
     }
 };

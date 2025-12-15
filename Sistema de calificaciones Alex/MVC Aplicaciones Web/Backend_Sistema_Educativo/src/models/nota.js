@@ -88,6 +88,26 @@ export const Nota = sequelize.define(
             type: DataTypes.TEXT, 
             allowNull: true 
         },
+        tipoEvaluacion: {
+            type: DataTypes.ENUM('tarea', 'informe', 'leccion', 'examen', 'proyecto', 'participacion'),
+            allowNull: true,
+            defaultValue: 'examen'
+        },
+        fechaEvaluacion: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            defaultValue: DataTypes.NOW
+        },
+        docenteModifico: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            comment: "ID del docente que realizó la última modificación"
+        },
+        fechaModificacion: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: "Fecha de la última modificación"
+        },
         fecha: { 
             type: DataTypes.DATE, 
             allowNull: false, 

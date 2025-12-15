@@ -6,15 +6,53 @@ import { Op } from "sequelize";
 export const crearEstudiante = async (req, res) => {
     try{
         const {nombre, cedula, email, telefono, direccion, fechaNacimiento, foto, estado,cursoId} = req.body;
-        if(!nombre || !cedula){
-            return res.status(400).json({mensaje: "Faltan datos requeridos"});
+        
+        // Validaciones básicas obligatorias
+        if(!nombre || !cedula || !email || !telefono){
+            return res.status(400).json({error: "Faltan datos requeridos: nombre, cédula, email y teléfono son obligatorios"});
         }
 
-        //validar que exista el cursoId si se proporciona
+        // Validar formato de cédula Ecuador (11 dígitos)
+        if (!/^\d{11}$/.test(String(cedula).trim())) {
+            return res.status(400).json({error: "La cédula debe contener exactamente 11 dígitos numéricos"});
+        }
+
+        // Verificar que no exista la cédula
+        const existente = await Estudiante.findOne({ where: { cedula: String(cedula).trim() } });
+        if (existente) {
+            return res.status(400).json({error: "Ya existe un estudiante con esa cédula"});
+        }
+
+        // Validar email requerido
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+            return res.status(400).json({error: "El formato del email no es válido"});
+        }
+
+        // Validar teléfono requerido (Ecuador móvil: 09 + 8 dígitos)
+        if (!/^09\d{8}$/.test(String(telefono).trim())) {
+            return res.status(400).json({error: "El teléfono debe tener 10 dígitos y empezar con 09"});
+        }
+
+        // Validar que exista el cursoId si se proporciona
         if(cursoId){
             const cursoExistente = await Curso.findByPk(cursoId);
             if(!cursoExistente){
-                return res.status(400).json({mensaje: "Curso no encontrado"});
+                return res.status(400).json({error: "Curso no encontrado"});
+            }
+        }
+
+        // Validar fecha de nacimiento si se proporciona
+        if (fechaNacimiento) {
+            const fecha = new Date(fechaNacimiento);
+            if (isNaN(fecha.getTime())) {
+                return res.status(400).json({error: "Fecha de nacimiento inválida"});
+            }
+            if (fecha > new Date()) {
+                return res.status(400).json({error: "La fecha de nacimiento no puede ser futura"});
+            }
+            const age = (new Date() - fecha) / (365.25 * 24 * 60 * 60 * 1000);
+            if (age < 3 || age > 100) {
+                return res.status(400).json({error: "La edad debe estar entre 3 y 100 años"});
             }
         }
 
@@ -22,6 +60,10 @@ export const crearEstudiante = async (req, res) => {
         res.status(201).json(nuevo);
     
     }catch (err){
+        if (err?.name === 'SequelizeValidationError' || err?.name === 'SequelizeUniqueConstraintError') {
+            const detalles = err.errors?.map(e => e.message).join('; ');
+            return res.status(400).json({ error: detalles || 'Error de validación' });
+        }
         res.status(500).json({error: err.message});
     }
 };

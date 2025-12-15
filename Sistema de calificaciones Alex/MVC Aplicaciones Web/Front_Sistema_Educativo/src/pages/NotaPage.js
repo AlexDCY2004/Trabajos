@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { listarNotas, crearNota, actualizarNota, eliminarNota, obtenerHistorialNotas, obtenerEstadoAcademico } from '../services/notaService';
+import { listarNotas, crearNota, actualizarNota, eliminarNota, obtenerHistorialNotas, obtenerEstadoAcademico, exportarNotasExcel, exportarNotasPDF } from '../services/notaService';
 import { listarEstudiantes, buscarEstudiante } from '../services/estudianteService';
 import { listarDocentes } from '../services/docenteService';
 import { listarAsignaturas } from '../services/asignaturaService';
+import { obtenerUsuarioActual } from '../services/authService';
 import Alert from '../components/Alert';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function NotaPage() {
+  const usuario = obtenerUsuarioActual();
+  const esEstudiante = usuario?.rol === 'estudiante';
+  const esDocente = usuario?.rol === 'docente';
+  
   const [notas, setNotas] = useState([]);
   const [estudiantes, setEstudiantes] = useState([]);
   const [docentes, setDocentes] = useState([]);
@@ -16,7 +21,8 @@ export default function NotaPage() {
   const [showModal, setShowModal] = useState(false);
   const [notaAEliminar, setNotaAEliminar] = useState(null);
   const [showFormulario, setShowFormulario] = useState(false);
-  const [mostrarHistorial, setMostrarHistorial] = useState(false);
+  const [mostrarHistorial, setMostrarHistorial] = useState(esEstudiante); // Auto-abrir para estudiantes
+  const [cargandoExport, setCargandoExport] = useState(false);
   const [filtros, setFiltros] = useState({
     estudianteId: '',
     docenteId: '',
@@ -32,7 +38,9 @@ export default function NotaPage() {
     informe: '',
     leccion: '',
     examen: '',
-    observaciones: ''
+    observaciones: '',
+    tipoEvaluacion: 'examen',
+    fechaEvaluacion: new Date().toISOString().split('T')[0]
   });
   const [editando, setEditando] = useState(null);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
@@ -117,7 +125,9 @@ export default function NotaPage() {
       informe: '',
       leccion: '',
       examen: '',
-      observaciones: ''
+      observaciones: '',
+      tipoEvaluacion: 'examen',
+      fechaEvaluacion: new Date().toISOString().split('T')[0]
     });
     setEditando(null);
     setShowFormulario(false);
@@ -219,26 +229,64 @@ export default function NotaPage() {
     }
   };
 
+  const descargarArchivo = (blob, nombre) => {
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nombre;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleExportExcel = async () => {
+    setCargandoExport(true);
+    try {
+      const blob = await exportarNotasExcel(filtros);
+      descargarArchivo(blob, 'reporte-notas.xlsx');
+    } catch (error) {
+      setAlert({ show: true, type: 'danger', message: error.message || 'Error al exportar Excel' });
+    } finally {
+      setCargandoExport(false);
+    }
+  };
+
+  const handleExportPDF = async () => {
+    setCargandoExport(true);
+    try {
+      const blob = await exportarNotasPDF(filtros);
+      descargarArchivo(blob, 'reporte-notas.pdf');
+    } catch (error) {
+      setAlert({ show: true, type: 'danger', message: error.message || 'Error al exportar PDF' });
+    } finally {
+      setCargandoExport(false);
+    }
+  };
+
   return (
     <div className="container-fluid mt-4">
       <div className="row mb-4">
         <div className="col">
           <h2>
             <i className="bi bi-file-earmark-text-fill me-2"></i>
-            Registro de Notas
+            {esEstudiante ? 'Mis Notas' : 'Registro de Notas'}
           </h2>
+          {esEstudiante && <p className="text-muted">Vista de tus calificaciones</p>}
         </div>
         <div className="col text-end">
-          <button 
-            className="btn btn-primary me-2"
-            onClick={() => {
-              if (showFormulario) resetearFormulario();
-              else setShowFormulario(true);
-            }}
-          >
-            <i className="bi bi-plus-lg me-2"></i>
-            {showFormulario ? 'Cerrar' : 'Nueva Nota'}
-          </button>
+          {!esEstudiante && (
+            <button 
+              className="btn btn-primary me-2"
+              onClick={() => {
+                if (showFormulario) resetearFormulario();
+                else setShowFormulario(true);
+              }}
+            >
+              <i className="bi bi-plus-lg me-2"></i>
+              {showFormulario ? 'Cerrar' : 'Nueva Nota'}
+            </button>
+          )}
           <button
             className="btn btn-outline-info"
             onClick={() => setMostrarHistorial(!mostrarHistorial)}
@@ -256,7 +304,7 @@ export default function NotaPage() {
         onClose={() => setAlert({ show: false })}
       />
 
-      {showFormulario && (
+      {showFormulario && !esEstudiante && (
         <div className="card mb-4">
           <div className="card-header bg-primary text-white">
             <h5 className="mb-0">{editando ? 'Editar Nota' : 'Nueva Nota'}</h5>
@@ -402,6 +450,33 @@ export default function NotaPage() {
                 </div>
               </div>
 
+              <div className="row">
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Tipo de Evaluación</label>
+                  <select
+                    className="form-select"
+                    value={formulario.tipoEvaluacion}
+                    onChange={(e) => setFormulario({ ...formulario, tipoEvaluacion: e.target.value })}
+                  >
+                    <option value="examen">Examen</option>
+                    <option value="tarea">Tarea</option>
+                    <option value="informe">Informe</option>
+                    <option value="leccion">Lección</option>
+                    <option value="proyecto">Proyecto</option>
+                    <option value="participacion">Participación</option>
+                  </select>
+                </div>
+                <div className="col-md-6 mb-3">
+                  <label className="form-label">Fecha de Evaluación</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    value={formulario.fechaEvaluacion}
+                    onChange={(e) => setFormulario({ ...formulario, fechaEvaluacion: e.target.value })}
+                  />
+                </div>
+              </div>
+
               <div className="mb-3">
                 <label className="form-label">Observaciones</label>
                 <textarea
@@ -423,9 +498,31 @@ export default function NotaPage() {
 
       {mostrarHistorial && (
         <div className="card mb-4">
-          <div className="card-header bg-info text-white d-flex justify-content-between align-items-center">
-            <h5 className="mb-0">Historial académico</h5>
-            <small>Busca por cédula o nombre</small>
+          <div className="card-header bg-info text-white">
+            <div className="d-flex align-items-center justify-content-between flex-wrap gap-2">
+              <div>
+                <h5 className="mb-0">Historial académico</h5>
+                <small>Busca por cédula o nombre</small>
+              </div>
+              <div className="d-flex align-items-center gap-2">
+                <button
+                  className="btn btn-light btn-sm"
+                  onClick={handleExportExcel}
+                  disabled={cargandoExport}
+                >
+                  <i className="bi bi-file-earmark-excel me-1 text-success"></i>
+                  {cargandoExport ? 'Generando...' : 'Exportar Excel'}
+                </button>
+                <button
+                  className="btn btn-light btn-sm"
+                  onClick={handleExportPDF}
+                  disabled={cargandoExport}
+                >
+                  <i className="bi bi-file-earmark-pdf me-1 text-danger"></i>
+                  {cargandoExport ? 'Generando...' : 'Exportar PDF'}
+                </button>
+              </div>
+            </div>
           </div>
           <div className="card-body">
             <div className="row g-2 align-items-end mb-3">
@@ -583,26 +680,27 @@ export default function NotaPage() {
         </div>
       )}
 
-      <div className="card mb-4">
-        <div className="card-header bg-secondary text-white">
-          <h5 className="mb-0">Filtros</h5>
-        </div>
-        <div className="card-body">
-          <form onSubmit={(e) => { e.preventDefault(); cargarNotasConFiltros(); }}>
-            <div className="row">
-              <div className="col-md-3 mb-3">
-                <label className="form-label">Estudiante</label>
-                <select
-                  className="form-select"
-                  value={filtros.estudianteId}
-                  onChange={(e) => setFiltros({ ...filtros, estudianteId: e.target.value })}
-                >
-                  <option value="">Todos</option>
-                  {estudiantes.map(est => (
-                    <option key={est.id} value={est.id}>{est.nombre}</option>
-                  ))}
-                </select>
-              </div>
+      {!esEstudiante && (
+        <div className="card mb-4">
+          <div className="card-header bg-secondary text-white">
+            <h5 className="mb-0">Filtros</h5>
+          </div>
+          <div className="card-body">
+            <form onSubmit={(e) => { e.preventDefault(); cargarNotasConFiltros(); }}>
+              <div className="row">
+                <div className="col-md-3 mb-3">
+                  <label className="form-label">Estudiante</label>
+                  <select
+                    className="form-select"
+                    value={filtros.estudianteId}
+                    onChange={(e) => setFiltros({ ...filtros, estudianteId: e.target.value })}
+                  >
+                    <option value="">Todos</option>
+                    {estudiantes.map(est => (
+                      <option key={est.id} value={est.id}>{est.nombre}</option>
+                    ))}
+                  </select>
+                </div>
               <div className="col-md-3 mb-3">
                 <label className="form-label">Parcial</label>
                 <select
@@ -638,14 +736,15 @@ export default function NotaPage() {
           </form>
         </div>
       </div>
+      )}
 
-      {cargando ? (
+      {!esEstudiante && cargando ? (
         <div className="text-center">
           <div className="spinner-border" role="status">
             <span className="visually-hidden">Cargando...</span>
           </div>
         </div>
-      ) : (
+      ) : !esEstudiante && (
         <div className="card">
           <div className="table-responsive">
             <table className="table table-hover mb-0">

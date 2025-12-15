@@ -7,7 +7,9 @@ import {
 	actualizarNota,
 	eliminarNota,
 	obtenerNotasEstudiante,
-    obtenerEstadoAcademico
+    obtenerEstadoAcademico,
+    exportarNotasExcel,
+    exportarNotasPDF
 } from "../controllers/notaController.js";
 
 const router = Router();
@@ -17,6 +19,8 @@ router.post('/', crearNota);
 router.get('/', listarNotas);
 router.get('/estudiante/:estudianteId', obtenerNotasEstudiante);
 router.get('/estudiante/:estudianteId/asignatura/:asignaturaId', obtenerEstadoAcademico);
+router.get('/export/excel', exportarNotasExcel);
+router.get('/export/pdf', exportarNotasPDF);
 
 // Rutas genéricas después para evitar que "/:id" intercepte las anteriores
 router.get('/:id', obtenerNotaPorId);

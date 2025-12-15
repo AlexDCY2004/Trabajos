@@ -7,21 +7,44 @@ import { Op } from "sequelize";
 export const crearAsignatura = async (req, res) => {
     try{
         const {nombre, codigo, creditos, docenteId} = req.body;
+        
+        // Validaciones básicas
         if(!nombre || !codigo || !creditos || docenteId == null){
-            return res.status(400).json({mensaje: "Faltan datos requeridos: nombre, codigo, creditos o docenteId"});
+            return res.status(400).json({error: "Faltan datos requeridos: nombre, código, créditos y docente son obligatorios"});
         }
 
-        // verificar que exista el docente indicado
+        // Validar código
+        if (!/^[A-Z0-9\-]{2,10}$/.test(String(codigo).trim().toUpperCase())) {
+            return res.status(400).json({error: "El código debe tener entre 2 y 10 caracteres y solo contener letras mayúsculas, números y guiones"});
+        }
+
+        // Verificar que no exista el código
+        const existente = await Asignatura.findOne({ where: { codigo: String(codigo).trim().toUpperCase() } });
+        if (existente) {
+            return res.status(400).json({error: "Ya existe una asignatura con ese código"});
+        }
+
+        // Validar créditos
+        const creditosNum = parseInt(creditos);
+        if (isNaN(creditosNum) || creditosNum < 1 || creditosNum > 10) {
+            return res.status(400).json({error: "Los créditos deben ser un número entre 1 y 10"});
+        }
+
+        // Verificar que exista el docente indicado
         const docente = await Docente.findByPk(docenteId);
-        if (!docente) return res.status(404).json({ mensaje: "Docente no encontrado" });
+        if (!docente) return res.status(404).json({ error: "Docente no encontrado" });
 
-        const nuevo = await Asignatura.create({nombre, codigo, creditos, docenteId});
+        const nuevo = await Asignatura.create({nombre, codigo, creditos: creditosNum, docenteId});
 
-        // devolver con include para que muestre el docente (null o el objeto)
+        // devolver con include para que muestre el docente
         const creado = await Asignatura.findByPk(nuevo.id, { include: [{ model: Docente }] });
         res.status(201).json(creado);
 
     }catch (err){
+        if (err?.name === 'SequelizeValidationError' || err?.name === 'SequelizeUniqueConstraintError') {
+            const detalles = err.errors?.map(e => e.message).join('; ');
+            return res.status(400).json({ error: detalles || 'Error de validación' });
+        }
         res.status(500).json({error: err.message});
     }
 };

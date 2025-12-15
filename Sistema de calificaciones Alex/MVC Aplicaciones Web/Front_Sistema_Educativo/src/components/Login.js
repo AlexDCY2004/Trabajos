@@ -99,8 +99,8 @@ export default function Login() {
             <small className="text-muted">
               Usuarios de prueba:<br/>
               <strong>admin / admin123</strong><br/>
-              <strong>docente1 / doc123</strong><br/>
-              <strong>estudiante1 / est123</strong>
+              <strong>docente_martinez / docente123</strong><br/>
+              <strong>estudiante_juan / estudiante123</strong>
             </small>
           </div>
         </div>

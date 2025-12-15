@@ -81,3 +81,29 @@ export const obtenerEstadoAcademico = async (estudianteId, asignaturaId) => {
     throw error;
   }
 };
+
+// Exportar notas a Excel
+export const exportarNotasExcel = async (filtros = {}) => {
+  try {
+    const response = await apiClient.get('/api/notas/export/excel', {
+      params: filtros,
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Exportar notas a PDF
+export const exportarNotasPDF = async (filtros = {}) => {
+  try {
+    const response = await apiClient.get('/api/notas/export/pdf', {
+      params: filtros,
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

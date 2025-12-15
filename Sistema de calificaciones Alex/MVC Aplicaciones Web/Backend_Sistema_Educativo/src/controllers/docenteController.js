@@ -16,14 +16,29 @@ export const crearDocente = async (req, res) => {
             departamento 
         } = req.body;
         
-        if (!nombre || !cedula || !departamento) {
-            return res.status(400).json({ error: "Faltan datos requeridos: nombre, cedula y departamento son obligatorios" });
+        if (!nombre || !cedula || !departamento || !email || !telefono) {
+            return res.status(400).json({ error: "Faltan datos requeridos: nombre, cédula, email, teléfono y departamento son obligatorios" });
+        }
+
+        // Validar formato de cédula Ecuador (11 dígitos)
+        if (!/^\d{11}$/.test(String(cedula).trim())) {
+            return res.status(400).json({ error: "La cédula debe contener exactamente 11 dígitos numéricos" });
         }
 
         // Evitar duplicados de cédula con mensaje claro
         const existente = await Docente.findOne({ where: { cedula: String(cedula).trim() } });
         if (existente) {
             return res.status(400).json({ error: "Ya existe un docente con esa cédula" });
+        }
+
+        // Validar email
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+            return res.status(400).json({ error: "El formato del email no es válido" });
+        }
+
+        // Validar teléfono Ecuador (10 dígitos, inicia con 09)
+        if (!/^09\d{8}$/.test(String(telefono).trim())) {
+            return res.status(400).json({ error: "El teléfono debe tener 10 dígitos y empezar con 09" });
         }
         
         const nuevo = await Docente.create({ 

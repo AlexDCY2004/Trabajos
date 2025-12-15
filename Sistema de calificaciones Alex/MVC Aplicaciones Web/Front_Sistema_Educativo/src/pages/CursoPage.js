@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { listarCursos, crearCurso, actualizarCurso, eliminarCurso, obtenerEstudiantesCurso, buscarCurso } from '../services/cursoService';
 import { listarDocentes } from '../services/docenteService';
+import { obtenerUsuarioActual } from '../services/authService';
 import Alert from '../components/Alert';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 export default function CursoPage() {
+  const usuario = obtenerUsuarioActual();
+  const esDocente = usuario?.rol === 'docente';
+  
   const [cursos, setCursos] = useState([]);
   const [docentes, setDocentes] = useState([]);
   const [cargando, setCargando] = useState(false);
@@ -146,32 +150,35 @@ export default function CursoPage() {
         <div className="col">
           <h2>
             <i className="bi bi-building me-2"></i>
-            Gestión de Cursos
+            {esDocente ? 'Consultar Cursos' : 'Gestión de Cursos'}
           </h2>
+          {esDocente && <p className="text-muted">Vista de solo lectura</p>}
         </div>
-        <div className="col text-end">
-          <button 
-            className="btn btn-primary me-2"
-            onClick={() => {
-              setShowFormulario(!showFormulario);
-              if (showFormulario) {
-                setFormulario({ 
-                  nombre: '', 
-                  nivel: '', 
-                  paralelo: '', 
-                  capacidad: '', 
-                  anio: new Date().getFullYear(),
-                  estado: 'activo',
-                  docenteId: '' 
-                });
-                setEditando(null);
-              }
-            }}
-          >
-            <i className="bi bi-plus-lg me-2"></i>
-            {showFormulario ? 'Cerrar' : 'Nuevo Curso'}
-          </button>
-        </div>
+        {!esDocente && (
+          <div className="col text-end">
+            <button 
+              className="btn btn-primary me-2"
+              onClick={() => {
+                setShowFormulario(!showFormulario);
+                if (showFormulario) {
+                  setFormulario({ 
+                    nombre: '', 
+                    nivel: '', 
+                    paralelo: '', 
+                    capacidad: '', 
+                    anio: new Date().getFullYear(),
+                    estado: 'activo',
+                    docenteId: '' 
+                  });
+                  setEditando(null);
+                }
+              }}
+            >
+              <i className="bi bi-plus-lg me-2"></i>
+              {showFormulario ? 'Cerrar' : 'Nuevo Curso'}
+            </button>
+          </div>
+        )}
       </div>
 
       <Alert 
@@ -457,18 +464,22 @@ export default function CursoPage() {
                       >
                         <i className="bi bi-eye"></i>
                       </button>
-                      <button
-                        className="btn btn-sm btn-warning me-2"
-                        onClick={() => handleEditar(curso)}
-                      >
-                        <i className="bi bi-pencil"></i>
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleEliminar(curso)}
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
+                      {!esDocente && (
+                        <>
+                          <button
+                            className="btn btn-sm btn-warning me-2"
+                            onClick={() => handleEditar(curso)}
+                          >
+                            <i className="bi bi-pencil"></i>
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleEliminar(curso)}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))}
